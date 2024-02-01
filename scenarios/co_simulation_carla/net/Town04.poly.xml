@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-09-27 14:17:01 by Eclipse SUMO netconvert Version 1.18.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+
+    <input>
+        <opendrive-files value="Town04.xodr"/>
+    </input>
+
+    <output>
+        <polygon-output value="Town04.poly.xml"/>
+    </output>
+
+    <junctions>
+        <no-turnarounds.except-deadend value="true"/>
+    </junctions>
+
+</configuration>
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <!-- <poly id="1701" type="-1" color="yellow" fill="1" layer="7.00" geo="1" shape="0.002230,0.002768,0.004349 0.001903,0.002767,0.004349 0.002230,0.002768,0.004349">
+        <param key="name" value="SolidSingleWhite"/>
+    </poly>
+    <poly id="1696" type="-1" color="yellow" fill="1" layer="7.00" geo="1" shape="0.002232,0.002797,0.004349 0.001911,0.002795,0.004349 0.002232,0.002797,0.004349">
+        <param key="name" value="DashedSingleYellow"/>
+    </poly> -->
+
+    <poly id="2000" type="building" color="237,199,199" fill="1" shape="714.28,663.81 712.24,662.03 711.12,603.82 713.11,602.29 749.69,602.53 751.22,604.33 751.22,662.41 749.82,664.58 714.28,663.81" />
+    <poly id="2001" type="building" color="237,199,199" fill="1" shape="768.80,664.45 767.27,662.66 767.02,604.83 769.44,602.29 806.50,602.03 808.29,604.20 808.67,662.92 806.89,664.45 768.80,664.45" />
+    <poly id="2002" type="building" color="237,199,199" fill="1" shape="699.76,659.89 663.12,640.42 648.84,631.09 642.18,604.96 699.76,605.34 699.76,659.89" />
+    <poly id="2003" type="building" color="237,199,199" fill="1" shape="715.68,725.72 713.52,724.19 712.63,681.03 714.66,679.22 749.82,679.35 752.37,681.01 752.26,724.57 750.92,725.59 715.68,725.72" />
+
+
+</additional>

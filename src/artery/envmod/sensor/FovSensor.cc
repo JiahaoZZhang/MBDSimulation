@@ -212,7 +212,8 @@ const FieldOfView& FovSensor::getFieldOfView() const
 omnetpp::SimTime FovSensor::getValidityPeriod() const
 {
     using namespace omnetpp;
-    return SimTime { 200, SIMTIME_MS };
+    // return SimTime { 200, SIMTIME_MS };
+    return SimTime { 10, SIMTIME_MS };
 }
 
 SensorPosition FovSensor::position() const

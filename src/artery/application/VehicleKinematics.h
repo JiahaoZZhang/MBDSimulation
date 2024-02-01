@@ -26,6 +26,7 @@ struct VehicleKinematics
 {
     VehicleKinematics();
 
+    std::__cxx11::string sumo_id;
     Position position;
     GeoPosition geo_position;
     vanetza::units::Velocity speed;

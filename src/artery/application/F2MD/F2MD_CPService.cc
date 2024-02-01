@@ -25,14 +25,27 @@
 #include <vanetza/btp/ports.hpp>
 #include <vanetza/facilities/cam_functions.hpp>
 #include <chrono>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/types.h> 
 
 
-std::map<int,int> PseudoID2ArteryID;
+#define RXSocketPORT 65432
+#define TXSocketPORT 65433
+#define ExtPerSocketPORT 65434
+
+int mypythonsocketRX = 0; 
+int mypythonsocketTX = 0; 
+int mypythonsocketEX = 0; 
+std::map<int,std::string> Artery2SumoID;
 
 namespace artery
 {
 
 using namespace omnetpp;
+using namespace std;
+
 Define_Module(F2MD_CPService)
 
 static const simsignal_t scSignalCpmReceived = cComponent::registerSignal("CpmReceived");
@@ -54,19 +67,15 @@ void F2MD_CPService::initialize()
     mTimer = &getFacilities().get_const<Timer>();
     mlocalEnvmod = &getFacilities().get_const<LocalEnvironmentModel>();
     mglobleEnvmod = &getFacilities().get_mutable<GlobalEnvironmentModel>();
-    std::shared_ptr<const traci::API> mTraci = mVehicleController->getTraCI();
-    mTraci->vehicle.setSpeedMode(mVehicleController->getVehicleId(), 0);
-    mTraci->vehicle.setLaneChangeMode(mVehicleController->getVehicleId(), 0);
+    mTraci = mVehicleController->getTraCI();
 
+
+    // Parameters setting
     mGenCpmMax = par("maxInterval");
     mFixedRate = par("fixedRate");
+    Test_mode = par("Test_mode");
     mLastCpmTimestamp = simTime();
     initParams();
-
-    // generation rate boundaries
-	mGenCpm = mGenCpmMax;
-    int myId = mVehicleDataProvider->getStationId();
-    int attackType = mF2MDFacility.getAttackType();
 
     // Initialize Pseudonym Change Policy
     myPcType = CPparams.PC_TYPE;
@@ -85,9 +94,7 @@ void F2MD_CPService::initialize()
     mPCPolicyCPM.setPseudoNum(&pseudoNum);
     myPseudonym = mPCPolicyCPM.getNextPseudonym()  % 4294967295;
     myPseudonym = myPseudonym % 4294967295;
-    if(PseudoID2ArteryID.find(myPseudonym) == PseudoID2ArteryID.end()){
-        PseudoID2ArteryID.insert(std::pair<int,int>(myPseudonym,myId));
-    }
+
 
     // ------ Initialization of F2MD Module ------ Start
     mF2MDFacility = F2MD_CPFacility(mVehicleDataProvider, mVehicleController, CPparams, &myPseudonym);
@@ -96,70 +103,40 @@ void F2MD_CPService::initialize()
     mExtendPerceptionTable = ExtendPerceptionTable();
     // ------ Initialization of F2MD Module ------ End
 
+
+    // generation rate boundaries
+	mGenCpm = mGenCpmMax;
+    int myId = mVehicleDataProvider->getStationId();
+    double attackType = mF2MDFacility.getAttackType();
+
+
     string str_id = to_string(myId);
-    string outlogfile_name = "output/Log/";
-    outlogfile_name.append(cpAttackTypes::AttackNames[CPparams.CP_LOCAL_ATTACK_TYPE]);
-    if(CPparams.KeepSameID == true){
-        outlogfile_name.append("_KeepSameID");
-    }
-    struct stat info_log;
-    if ((stat(outlogfile_name.c_str(), &info_log) != 0) || !(info_log.st_mode & S_IFDIR)) {
-        mkdir(outlogfile_name.c_str(), 0777);
-    }
-    outlogfile_name.append("/log_vehicle_");    
+    string outlogfile_name = "output/Log/log_vehicle_";    
     outlogfile_name.append(str_id);
     outputfilelog.open(outlogfile_name,ios::out);
 
     // For Json
     string suffix = ".json";
 
-    string outjsonfilecpm_name = "output/GENUINE/CPM/RX/";
-    outjsonfilecpm_name.append(cpAttackTypes::AttackNames[CPparams.CP_LOCAL_ATTACK_TYPE]);
-    if(CPparams.KeepSameID == true){
-        outjsonfilecpm_name.append("_KeepSameID");
-    }
-    struct stat info_rx;
-    if ((stat(outjsonfilecpm_name.c_str(), &info_rx) != 0) || !(info_rx.st_mode & S_IFDIR)) {
-        mkdir(outjsonfilecpm_name.c_str(), 0777);
-    }
-    outjsonfilecpm_name.append("/logjson_cpm_rx");
+    string outjsonfilecpm_name = "output/GENUINE/CPM/RX/logjson_cpm_rx";
     outjsonfilecpm_name.append(str_id);
     outjsonfilecpm_name.append (suffix);
     outputjsonfilecpm.open(outjsonfilecpm_name,ios::out);
     jwritecpmRX.openJsonElementList("CPM_RX");
 
-
-    string outjsonfilecpmEmit_name = "output/GENUINE/CPM/TX/";
-    outjsonfilecpmEmit_name.append(cpAttackTypes::AttackNames[CPparams.CP_LOCAL_ATTACK_TYPE]);
-    if(CPparams.KeepSameID == true){
-        outjsonfilecpmEmit_name.append("_KeepSameID");
-    }
-    struct stat info_tx;
-    if ((stat(outjsonfilecpmEmit_name.c_str(), &info_tx) != 0) || !(info_tx.st_mode & S_IFDIR)) {
-        mkdir(outjsonfilecpmEmit_name.c_str(), 0777);
-    }
-    outjsonfilecpmEmit_name.append("/logjson_cpm_tx");
+    string outjsonfilecpmEmit_name = "output/GENUINE/CPM/TX/logjson_cpm_tx";
     outjsonfilecpmEmit_name.append(str_id);
     outjsonfilecpmEmit_name.append (suffix);
     outputjsonfilecpmEmit.open(outjsonfilecpmEmit_name,ios::out);
     jwritecpmTX.openJsonElementList("CPM_TX");
 
-
     // Ground Truth
-    string outlemjsonfile_name = "output/GENUINE/LP/";
-    outlemjsonfile_name.append(cpAttackTypes::AttackNames[CPparams.CP_LOCAL_ATTACK_TYPE]);
-    if(CPparams.KeepSameID == true){
-        outlemjsonfile_name.append("_KeepSameID");
-    }
-    struct stat info_lp;
-    if ((stat(outlemjsonfile_name.c_str(), &info_lp) != 0) || !(info_lp.st_mode & S_IFDIR)) {
-        mkdir(outlemjsonfile_name.c_str(), 0777);
-    }
-    outlemjsonfile_name.append("/logjson_lp");
+    string outlemjsonfile_name = "output/GENUINE/LP/logjson_lp";
     outlemjsonfile_name.append(str_id);
     outlemjsonfile_name.append (suffix);
     outputjsonfilelem.open(outlemjsonfile_name,ios::out);
     jwritelem.openJsonElementList("LP");
+
 }
 
 
@@ -205,7 +182,7 @@ void F2MD_CPService::indicate(const vanetza::btp::DataIndication& indication, st
     
     const auto egoStationID = mVehicleDataProvider->station_id();
     // std::cout << egoStationID <<" packet reception at "<< SIMTIME_STR(simTime())<<std::endl;
-    // if (outputfilelog.is_open()){ outputfilelog << " -------> packet reception at "<< SIMTIME_STR(simTime())<<std::endl; }
+    if (outputfilelog.is_open()){ outputfilelog << " -------> packet reception at "<< SIMTIME_STR(simTime())<<std::endl; }
 
     if (cpm && cpm->validate()) {
 
@@ -213,38 +190,57 @@ void F2MD_CPService::indicate(const vanetza::btp::DataIndication& indication, st
         emit(scSignalCpmReceived, &obj);
         const vanetza::asn1::Cpm& msg = obj.asn1();
         
-        // Display important fields contained in the received BSM, to check the reception (Useful for debugging)
-        checkReception(msg);
-        
         const CollectivePerceptionMessage_t myMsg = *msg;
 
-        // Pass the received CPM to the F2MD Processing facility for further analysis (MbD checks,...)
 
+
+        // Pass the received CPM to the F2MD Processing facility for further analysis (MbD checks,...)
         // double checkfailed = 0;
         mCpmCheckList.resetAll();
-        double checkfailed = mF2MDFacility.onCPM(msg, neighborMAcId, mCpmCheckList, PseudoID2ArteryID);
-        // if (outputfilelog.is_open()){ 
-        //     outputfilelog << " -------> station :"<< myMsg.header.stationId << "  >>>> Check List ::: " << endl; 
-        //     outputfilelog << " distance Plausibility :: "<< mCpmCheckList.getdistancePlausibility() << endl;
-        //     outputfilelog << " speed Plausibility :: "<< mCpmCheckList.getspeedPlausibility() << endl;
+        ExtendPerceptionTable newExtendPerceptionTable;
+        // simple reaction to ignore the CPM when detect a misbehavior
+        if(Test_mode == 0){ // active Misbehavior detection
+            double checkfailed = mF2MDFacility.onCPM(msg, neighborMAcId, mCpmCheckList);
+            if (checkfailed == 0){
+                if (MisbehaviorList.find(myMsg.header.stationId) == MisbehaviorList.end()){
+                    auto currentTime = simTime().inUnit(SIMTIME_MS);
+                    mExtendPerceptionTable.updateTable(&msg,currentTime);
+                }
+            }else{
+                MisbehaviorList.insert(myMsg.header.stationId);
+            }
+        }else{
+            auto currentTime = simTime().inUnit(SIMTIME_MS);
+            mExtendPerceptionTable.updateTable(&msg,currentTime);
+        }
 
-        //     outputfilelog << " speed Consistency :: "<< mCpmCheckList.getspeedConsistency() << endl;
-        //     outputfilelog << " positionSpeed Consistency :: "<< mCpmCheckList.getpositionSpeedConsistency() << endl;
 
-        //     outputfilelog << " kalman position Consistency :: "<< mCpmCheckList.getkalmanPositionConsistency() << endl;
-        //     outputfilelog << " kalman speed Consistency :: "<< mCpmCheckList.getkalmanSpeedConsistency() << endl;
+        newExtendPerceptionTable = this->mExtendPerceptionTable;
+        // Display important fields contained in the received BSM, to check the reception (Useful for debugging)
+        checkReception(msg, newExtendPerceptionTable);      
 
-        //     outputfilelog << " kalman position speed Consistency P :: "<< mCpmCheckList.getkalmanPositionSpeedConsistancyP() << endl;
-        //     outputfilelog << " kalman position speed Consistency S :: "<< mCpmCheckList.getkalmanPositionSpeedConsistancyS() << endl;
+        if (outputfilelog.is_open()){ 
+            outputfilelog << " -------> station :"<< myMsg.header.stationId << "  >>>> Check List ::: " << endl; 
+            outputfilelog << " distance Plausibility :: "<< mCpmCheckList.getdistancePlausibility() << endl;
+            outputfilelog << " speed Plausibility :: "<< mCpmCheckList.getspeedPlausibility() << endl;
+
+            outputfilelog << " speed Consistency :: "<< mCpmCheckList.getspeedConsistency() << endl;
+            outputfilelog << " positionSpeed Consistency :: "<< mCpmCheckList.getpositionSpeedConsistency() << endl;
+
+            outputfilelog << " kalman position Consistency :: "<< mCpmCheckList.getkalmanPositionConsistency() << endl;
+            outputfilelog << " kalman speed Consistency :: "<< mCpmCheckList.getkalmanSpeedConsistency() << endl;
+
+            outputfilelog << " kalman position speed Consistency P :: "<< mCpmCheckList.getkalmanPositionSpeedConsistancyP() << endl;
+            outputfilelog << " kalman position speed Consistency S :: "<< mCpmCheckList.getkalmanPositionSpeedConsistancyS() << endl;
             
-        //     outputfilelog << " detected misbehavior objects :: " << endl;
-        //     for(const auto& p: mCpmCheckList.getAttackedObject()){
-        //         outputfilelog << "   >>> Attacked ID :: " << p.ObjectID << endl;
-        //         outputfilelog << "   >>> Checkfailed :: " << p.Checkfailed << endl;
-        //         outputfilelog << " ----------------------------" << endl;
-        //     }
-        //     outputfilelog << " report :: "<< mCpmCheckList.getreport() << "\n" << endl;
-        // }
+            outputfilelog << " detected misbehavior objects :: " << endl;
+            for(const auto& p: mCpmCheckList.getAttackedObject()){
+                outputfilelog << "   >>> Attacked ID :: " << p.ObjectID << endl;
+                outputfilelog << "   >>> Checkfailed :: " << p.Checkfailed << endl;
+                outputfilelog << " ----------------------------" << endl;
+            }
+            outputfilelog << " report :: "<< mCpmCheckList.getreport() << "\n" << endl;
+        }
     }
 } 
 
@@ -254,14 +250,16 @@ void F2MD_CPService::indicate(const vanetza::btp::DataIndication& indication, st
    *  @brief  print in QtEnv what is contained in the cpm received. Useful for debugging.
    *  @param vanetza::asn1::Cpm& cpm received
 */
-void F2MD_CPService::checkReception(const vanetza::asn1::Cpm& msg){
-
-    auto currentTime = simTime().inUnit(SIMTIME_MS);
-    mExtendPerceptionTable.updateTable(&msg,currentTime);
+void F2MD_CPService::checkReception(const vanetza::asn1::Cpm& msg, ExtendPerceptionTable newExtendPerceptionTable){
 
     auto& allObjects = mlocalEnvmod->allObjects();
-    jwritecpmRX.addTagToElement("CPM_RX", printRXCpmtoJson(msg));
-    // jwritelem.addTagToElement("LP",printperceivedlisttoJson("Radar Sensor Object List", filterBySensorCategory(allObjects, "Radar")));
+    jwritecpmRX.addTagToElement("CPM_RX", printRXCpmtoJson(msg,newExtendPerceptionTable));
+    // jwriteextp.addTagToElement("EP",printextendedperceivedlisttoJson(mExtendPerceptionTable));    
+    jwritelem.addTagToElement("LP",printperceivedlisttoJson("Radar Sensor Object List", filterBySensorCategory(allObjects, "Radar")));
+
+    RXSocketCpmToPython(RXSocketPORT, msg, mVehicleDataProvider);
+    EXSocketCpmToPython(ExtPerSocketPORT,printextendedperceivedlisttoJson(newExtendPerceptionTable));
+
 }
 
 
@@ -287,6 +285,8 @@ void F2MD_CPService::sendCpm(const SimTime& T_now)
 
     // print each emitted CPM messages.
     jwritecpmTX.addTagToElement("CPM_TX", printTXCpmtoJson(cpm));
+
+    TXSocketCpmToPython(TXSocketPORT, mVehicleController);
     
 
     using namespace vanetza;
@@ -320,8 +320,7 @@ void F2MD_CPService::sendCpm(const SimTime& T_now)
 */
 vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const VehicleDataProvider& vdp, uint16_t genDeltaTime, const LocalEnvironmentModel& lem)
 {
-    // using vanetza::facilities::distance;
-
+    
     vanetza::asn1::Cpm message;
     ItsPduHeader_t& header = (*message).header;
 	header.protocolVersion = 2;
@@ -331,23 +330,23 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
     // Station ID interval: [0, 4294967295]
     // The ITS-S ID may be a pseudonym. It may change over space and/or over time.
     if (CPparams.EnablePC) {
-        auto ArteryID = vdp.getStationId() % 4294967295;
         auto SUMO_id = mVehicleController->getVehicleId();
         auto vehicle_api = mVehicleController->getTraCI()->vehicle;
         coordPos = vehicle_api.getPosition(SUMO_id);
         mPCPolicyCPM.setCurPosition(&coordPos);
         mPCPolicyCPM.checkPseudonymChange(CPparams.PC_TYPE);
         myPseudonym = myPseudonym % 4294967295;
-        if(PseudoID2ArteryID.find(myPseudonym) == PseudoID2ArteryID.end()){
-            PseudoID2ArteryID.insert(std::pair<int,int>(myPseudonym,ArteryID));
-        }
     }else{
-        myPseudonym = vdp.getStationId() % 4294967295; // artery allocated ID
+        myPseudonym = vdp.getStationId() % 4294967295;
     }
 
-    // std::cout << CPparams.EnablePC << endl;
-
     header.stationId = myPseudonym;
+	//header.stationId = vdp.getStationId() ;// artery allocated ID
+    if(Artery2SumoID.find(vdp.getStationId()) == Artery2SumoID.end()){
+        auto artery_id = vdp.getStationId();
+        auto sumo_id = mVehicleController->getVehicleId();
+        Artery2SumoID.insert(std::pair<int,std::string>(artery_id, sumo_id));
+    }
 
 
     CpmPayload_t& CpmPayload = (*message).payload;
@@ -430,12 +429,23 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
             
             // Get OMNET++ Vehicle ID
             object->objectId = vanetza::asn1::allocate<Identifier2B_t>();
-            long int objID = vd.getStationId() % 65535; // ASN.1 objectID limit to 65535
+            long int objID = vd.getStationId();
             *(object->objectId) = objID;
             long timeofmeasurement = countTaiMilliseconds(mTimer->getTimeFor(vd.updated()));
             long deltaTimeOfMeasurement = referenceTime - timeofmeasurement;
-        
-            
+
+
+            // add perceived object into artery sumo id conversion map
+
+            if(Artery2SumoID.find(vd.getStationId()) == Artery2SumoID.end()){
+                auto artery_id = vd.getStationId();
+                auto sumo_id = vd.sumo_id();
+                // cout << "artery_id::" << artery_id <<";;vd_sumo_id::" << sumo_id << endl;
+                Artery2SumoID.insert(std::pair<int,std::string>(artery_id, sumo_id));
+            }
+            // cout << "sumo_id::" << vd.sumo_id() << endl;
+            // cout <<  "position x::" << vd.position().x.value() << endl;
+
             /*************************************************************************************
             // �DeltaTimeMilliSecondSigned represents a signed difference in time with respect to a reference time
             //  Unit: 0,001 s
@@ -508,8 +518,7 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
             // Ines : set it to heading now, we need to fix it with Jiahao
             //object->velocity->choice.polarVelocity.velocityDirection.value = CartesianAngleValue_unavailable;
             ************************************************************************************************************/
-            int tempVelocityDirectionValue = std::round(900 - vd.heading().value() * 1800 / PI);
-            auto velocityDirectionValue = (tempVelocityDirectionValue % 3600 + 3600) % 3600;
+            auto velocityDirectionValue = std::round(vd.heading().value() * 1800 / PI);
             if((velocityDirectionValue >= 0) && (velocityDirectionValue < 3600)){
                 object->velocity->choice.polarVelocity.velocityDirection.value =  velocityDirectionValue; // heading(), radian from north, clockwise
             }else if(velocityDirectionValue == 3600){
@@ -524,7 +533,7 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
             // the acceleration vector of the object within the pre-defined coordinate system. (ENU coordinate system)
             object->acceleration = vanetza::asn1::allocate<Acceleration3dWithConfidence_t>();
             object->acceleration->present = Acceleration3dWithConfidence_PR_polarAcceleration;
-            uint32_t PreceivedObjAcceleration = std::round(std::fabs(vd.acceleration().value() * 10)); // AccelerationMagnitudeValue, Unit:0,1 m/S
+            uint32_t PreceivedObjAcceleration = std::round(vd.acceleration().value() * 10); // AccelerationMagnitudeValue, Unit:0,1 m/s
             if (PreceivedObjAcceleration > 159){
                 object->acceleration->choice.polarAcceleration.accelerationMagnitude.accelerationMagnitudeValue = AccelerationMagnitudeValue_positiveOutOfRange;
             }else if(PreceivedObjAcceleration > 0 && PreceivedObjAcceleration < 160){
@@ -535,19 +544,20 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
             // cout << "stationID::" << vdp.getStationId() << "; PreceivedObjAcceleration::" << PreceivedObjAcceleration << endl;
             object->acceleration->choice.polarAcceleration.accelerationMagnitude.accelerationConfidence = AccelerationConfidence_unavailable;
 
-            object->acceleration->choice.polarAcceleration.accelerationDirection.value = CartesianAngleValue_unavailable;
-            object->acceleration->choice.polarAcceleration.accelerationDirection.confidence = AngleConfidence_unavailable;
 
             /***********************************************************************************************************
             // CartesianAngleValue represents an angle value described in a local Cartesian coordinate system
             // per default counted positive in a right-hand local coordinate system from the abscissa. degree from right (x axis), anti-clockwise
             // need to change the reference of heading()     
             ***********************************************************************************************************/
+            object->acceleration->choice.polarAcceleration.accelerationDirection.value = CartesianAngleValue_unavailable;
+            object->acceleration->choice.polarAcceleration.accelerationDirection.confidence = AngleConfidence_unavailable;
+
             // Euler angles of the object bounding box at the time of measurement.
             object->angles = vanetza::asn1::allocate<EulerAnglesWithConfidence_t>();
-            int temp = std::round(900 - vd.heading().value()*1800/PI);
+            int temp = std::round(900-vd.heading().value()*1800/PI);
             auto zAngleValue = (temp % 3600 + 3600) % 3600;
-            if((zAngleValue >= 0) && (zAngleValue < 3600)){ 
+            if((zAngleValue >= 0) && (zAngleValue < 3600)){
                 object->angles->zAngle.value = zAngleValue;
             }else if(zAngleValue == 3600){
                 object->angles->zAngle.value = 0;
@@ -578,6 +588,7 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
         mPerceivedObjectContainer.numberOfPerceivedObjects = objects.size();
     }
     ASN_SEQUENCE_ADD(containersData, WrappedPerceivedObjectContainer);  
+
 
 
 
@@ -702,6 +713,9 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
     CpmPayload.cpmContainers = *containersData;
 
 
+
+
+
     //*************************************
     //     trigger attacks module
     //*************************************
@@ -713,14 +727,25 @@ vanetza::asn1::Cpm F2MD_CPService::createCollectivePerceptionMessage(const Vehic
     // }
 
 
+    
+    // if (header.stationId == 234){
+    //     cout << *CpmPayload.cpmContainers.list.array[1]->containerData.choice.PerceivedObjectContainer.perceivedObjects.list.array[1]->objectId << endl;
+    //     cout << CpmPayload.cpmContainers.list.array[1]->containerData.choice.PerceivedObjectContainer.perceivedObjects.list.count << endl;
+    //     cout << CpmPayload.cpmContainers.list.array[1]->containerData.choice.PerceivedObjectContainer.numberOfPerceivedObjects << endl;
+    // }
+
     std::string error;
 	if (!message.validate(error)) {
 		throw cRuntimeError("Invalid CPM message %s", error.c_str());
 	}
+
+
     //std::cout << vdp.station_id()<<" packet transmission at "<< SIMTIME_STR(simTime())<<std::endl;
 
-    return message;
 
+
+
+    return message;
 }
 
 
@@ -743,8 +768,12 @@ void F2MD_CPService::initParams(){
     CPparams.START_CPM_ATTACK = par("START_CPM_ATTACK");
     CPparams.MAX_CPM_DELTATIME = par("MAX_CPM_DELTATIME");
     CPparams.MAX_CPM_HISTORY_TIME = par("MAX_CPM_HISTORY_TIME");
-    CPparams.KeepSameID = par("KeepSameID");
 
+    CPparams.KeepSameID = par("KeepSameID");
+    CPparams.VEHICLE_LENGTH = par("VEHICLE_LENGTH");
+    CPparams.VEHICLE_WIDTH = par("VEHICLE_WIDTH");
+
+    CPparams.EnablePC = par("EnablePC");
 
     /* Attack Parameters Setting */
     CPparams.cpParVar = par("cpParVar");
@@ -753,36 +782,28 @@ void F2MD_CPService::initParams(){
     CPparams.RandomSpeed = par("RandomSpeed");
     CPparams.RandomSpeedOffset = par("RandomSpeedOffset");
     CPparams.RandomAccel = par("RandomAccel");
+    CPparams.MaxRadius = par("MaxRadius");
 
     /* Detector Parameters Setting */
     CPparams.MaxMapBoundary = par("MaxMapBoundary");
     CPparams.MAX_PLAUSIBLE_ANGLE_CHANGE = par("MAX_PLAUSIBLE_ANGLE_CHANGE");
-    CPparams.MAX_PLAUSIBLE_ACCEL = par("MAX_PLAUSIBLE_ACCEL");
-    CPparams.MAX_PLAUSIBLE_DECEL = par("MAX_PLAUSIBLE_DECEL");
-    CPparams.MAX_PLAUSIBLE_SPEED = par("MAX_PLAUSIBLE_SPEED");
     CPparams.TOLERANCE_EXCEED_SPEED = par("TOLERANCE_EXCEED_SPEED");
     CPparams.TOLERANCE_DEARTH_SPEED = par("TOLERANCE_DEARTH_SPEED");
     CPparams.SegmentAngle = par("SegmentAngle");
 
     /* Kalman Parameters Setting */
     CPparams.KALMAN_MIN_POS_RANGE = par("KALMAN_MIN_POS_RANGE");
-    CPparams.KALMAN_MIN_SPEED_RANGE = par("KALMAN_MIN_SPEED_RANGE");
     CPparams.KALMAN_POS_RANGE = par("KALMAN_POS_RANGE");
-    CPparams.KALMAN_SPEED_RANGE = par("KALMAN_SPEED_RANGE");
     CPparams.MAX_KALMAN_TIME = par("MAX_KALMAN_TIME");
+    CPparams.KALMAN_SPEED_RANGE = par("KALMAN_SPEED_RANGE");
     
-
     /* Pseudonym Parameters */
-    CPparams.EnablePC = par("EnablePC");
     CPparams.Period_Change_Time = par("Period_Change_Time");
     CPparams.Tolerance_Buffer = par("Tolerance_Buffer");
     CPparams.Period_Change_Distance = par("Period_Change_Distance");
     CPparams.Random_Change_Chance = par("Random_Change_Chance");
     CPparams.PC_TYPE = pseudoChangeTypes::intPseudoChange[par("PC_TYPE").intValue()];
 
-    /* Vehicular Characteristics*/
-    CPparams.VEHICLE_LENGTH = par("VEHICLE_LENGTH");
-    CPparams.VEHICLE_WIDTH = par("VEHICLE_WIDTH");
 }
 
 void F2MD_CPService::finish(){
@@ -837,7 +858,7 @@ std::string F2MD_CPService::printFinalTagtoJson() {
  * @brief print the receieved CPM information 
  * 
  */
-std::string F2MD_CPService::printRXCpmtoJson(const vanetza::asn1::Cpm& msg){
+std::string F2MD_CPService::printRXCpmtoJson(const vanetza::asn1::Cpm& msg, ExtendPerceptionTable mExtendPerceptionTable){
 
     std::string tempStr ="";
 
@@ -853,10 +874,50 @@ std::string F2MD_CPService::printRXCpmtoJson(const vanetza::asn1::Cpm& msg){
     int res = asn_INTEGER2long(&rftime,&rfT);
     tempStr = jw.getSimpleTag("referenceTime",std::to_string(rfT),true);
     jw.addTagToElement("cpm", tempStr);
-
     tempStr = jw.getSimpleTag("rx_timestamp",SIMTIME_STR(simTime()),true);
-    jw.addFinalTagToElement("cpm", tempStr);
+    jw.addTagToElement("cpm", tempStr);
     
+    jw.openJsonElementList("Extend_Perception_List");
+    auto mExtendPerceptionList = mExtendPerceptionTable.getExtendPerceptionList();
+    for(auto it = mExtendPerceptionList.begin(); it != mExtendPerceptionList.end(); it++){
+        jw.openJsonElement("ExtendPerceptionObj",true);
+        
+        tempStr = jw.getSimpleTag("LastUpdateTime",std::to_string((*it).LastUpdateTime),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("LastRecordTime",std::to_string((*it).LastRecordTime),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("ObserverID",std::to_string((*it).ObserverID),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        // auto info_it = mExtendPerceptionTable.getObjInfo((*it).PerceivedObjectID);
+        // cout << "address::" << &(*it) << ";;;; size::" << mExtendPerceptionList.size() << endl;
+        // cout << "mySumoId::"<< mVehicleController->getVehicleId() <<endl;
+        // cout << "ObserverSumoID::"<< Artery2SumoID.find((*it).ObserverID)->second <<endl;
+        // cout << "SumoPerceivedObjectID::"<< Artery2SumoID.find((*it).PerceivedObjectID)->second <<endl;
+        // cout << "speedvalue::"<< (*it).ObjectInfo.velocity->choice.polarVelocity.velocityMagnitude.speedValue <<endl;
+
+        tempStr = jw.getSimpleTag("speedValue",std::to_string((*it).ObjectInfo.velocity->choice.polarVelocity.velocityMagnitude.speedValue),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("xCoordinateValue",std::to_string((*it).ObjectInfo.position.xCoordinate.value),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("yCoordinateValue",std::to_string((*it).ObjectInfo.position.yCoordinate.value),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("PerceivedObjectID",std::to_string((*it).PerceivedObjectID),true);
+        jw.addFinalTagToElement("ExtendPerceptionObj", tempStr);
+
+        if(it == std::prev(mExtendPerceptionList.end())){
+            jw.addFinalTagToElement("Extend_Perception_List",jw.getJsonElement("ExtendPerceptionObj"));
+        }else{
+            jw.addTagToElement("Extend_Perception_List",jw.getJsonElement("ExtendPerceptionObj"));
+        }
+    }
+    jw.addFinalTagToElement("cpm", jw.getJsonElementList("Extend_Perception_List"));
+
     return jw.getJsonElement("cpm");  
 }
 
@@ -969,7 +1030,6 @@ std::string F2MD_CPService::printTXCpmtoJson(const vanetza::asn1::Cpm& msg) {
             jw.addFinalTagToElement("cpm",jw.getJsonElement("PerceivedObjectContainer"));  
        }
     }
-    
     return jw.getJsonElement("cpm");  
 }
 
@@ -1078,12 +1138,11 @@ std::string F2MD_CPService::printperceivedlisttoJson(const std::string& title, c
             tempStr = jw.getSimpleTag("longacceleration",std::to_string(vd.acceleration().value()),true);
             jw.addTagToElement("object", tempStr);
 
-            int tempAngle = std::round(900 - vd.heading().value() * 1800/PI);
-            auto tempOrientationAngle = ((tempAngle % 3600) + 3600) % 3600;
+            int tempOrientationAngle = std::round(vd.heading().value() * 1800/PI);
             tempStr = jw.getSimpleTag("orientationangle",std::to_string(tempOrientationAngle),true);
             jw.addTagToElement("object", tempStr);
             
-            auto tempYawRate = std::round(vd.yaw_rate().value()*180/PI);
+            int tempYawRate = std::round(vd.yaw_rate().value()*180/PI);
             if(tempYawRate > 255){
                 tempYawRate = 255;
             }else if(tempYawRate < -255){
@@ -1098,13 +1157,12 @@ std::string F2MD_CPService::printperceivedlisttoJson(const std::string& title, c
                 jw.addFinalTagToElement("objects", jw.getJsonElement("object"));
             }
             i++;
-        
         }
         jw.addTagToElement("perceived list",jw.getJsonElementList("objects"));
         tempStr = jw.getSimpleTag("NumPerceivedObj", std::to_string(sizeobjs - countLostTracingNum),true);
     }else{
         jw.addTagToElement("perceived list", tempStr);
-        tempStr = jw.getSimpleTag("NumPerceivedObj", std::to_string(boost::size(objs)),true); 
+        tempStr = jw.getSimpleTag("NumPerceivedObj", std::to_string(boost::size(objs)),true);
     } 
     jw.addTagToElement("perceived list", tempStr);
     
@@ -1114,6 +1172,9 @@ std::string F2MD_CPService::printperceivedlisttoJson(const std::string& title, c
         jw.openJsonElement("ExtendPerceptionObj",true);
         
         tempStr = jw.getSimpleTag("LastUpdateTime",std::to_string((*it).LastUpdateTime),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("speedValue",std::to_string((*it).ObjectInfo.velocity->choice.polarVelocity.velocityMagnitude.speedValue),true);
         jw.addTagToElement("ExtendPerceptionObj", tempStr);
 
         tempStr = jw.getSimpleTag("PerceivedObjectID",std::to_string((*it).PerceivedObjectID),true);
@@ -1131,4 +1192,393 @@ std::string F2MD_CPService::printperceivedlisttoJson(const std::string& title, c
 } 
 
 
+
+std::string F2MD_CPService::printextendedperceivedlisttoJson (ExtendPerceptionTable mExtendPerceptionTable) {
+       
+    std::string tempStr ="";
+    std::string tempStrObj ="";
+    JsonWriter jw;
+
+    jw.openJsonElement("Extend Perception List", true);
+
+    tempStr = jw.getSimpleTag("timestamp",SIMTIME_STR(simTime()),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+
+    //getting vdp.position.x gives omnetpp format
+    traci::TraCIGeoPosition geoV;
+    geoV.latitude = mVehicleDataProvider->latitude().value();
+    geoV.longitude = mVehicleDataProvider->longitude().value();
+    auto xyPos = mVehicleController->getTraCI().get()->convert2D(geoV);
+
+    tempStr = jw.getSimpleTag("myStationId",std::to_string(mVehicleDataProvider->getStationId()),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+    
+    tempStr = jw.getSimpleTag("mySumoId",mVehicleController->getVehicleId(),false);
+    jw.addTagToElement("Extend Perception List", tempStr);
+
+    tempStr = jw.getSimpleTag("Xegosumoposition",std::to_string(xyPos.x),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+    
+    tempStr = jw.getSimpleTag("Yegopsumoposition",std::to_string(xyPos.y),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+
+    tempStr = jw.getSimpleTag("longitude",std::to_string(mVehicleDataProvider->longitude().value()),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+    
+    tempStr = jw.getSimpleTag("latitude",std::to_string(mVehicleDataProvider->latitude().value()),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+
+    tempStr = jw.getSimpleTag("longspeed",std::to_string(mVehicleDataProvider->speed().value()),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+
+    tempStr = jw.getSimpleTag("longacceleration",std::to_string(mVehicleDataProvider->acceleration().value()),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+
+    tempStr = jw.getSimpleTag("orientationangle",std::to_string(std::round(mVehicleDataProvider->heading().value() * 1800 / PI)),true);
+    jw.addTagToElement("Extend Perception List", tempStr);
+
+    
+    jw.openJsonElementList("ExtendedPerceivedObjects");
+    auto mExtendPerceptionList = mExtendPerceptionTable.getExtendPerceptionList();
+    for(auto it = mExtendPerceptionList.begin(); it != mExtendPerceptionList.end(); ++it){
+        jw.openJsonElement("ExtendPerceptionObj",true);
+        
+        tempStr = jw.getSimpleTag("PerceivedObjectID",std::to_string((*it).PerceivedObjectID),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("SumoPerceivedObjectID",Artery2SumoID.find((*it).PerceivedObjectID)->second,false);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        //std::cout << "SUMO ID in JSON"<<Artery2SumoID.find((*it).PerceivedObjectID)->second << std::endl;
+        tempStr = jw.getSimpleTag("LastUpdateTime",std::to_string((*it).LastUpdateTime),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("Observer",std::to_string((*it).ObserverID),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        traci::TraCIGeoPosition geoVobject;
+            geoVobject.latitude = (*it).ReferencePosition.latitude / 1e7;
+            geoVobject.longitude = (*it).ReferencePosition.longitude / 1e7;
+        auto xyPosobject = mVehicleController->getTraCI().get()->convert2D(geoVobject);
+
+        // SUMO X position exact 
+        tempStr = jw.getSimpleTag("Xcoordinate",std::to_string(xyPosobject.x + (*it).ObjectInfo.position.xCoordinate.value / 1e2),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+        // SUMO Y position exact 
+        tempStr = jw.getSimpleTag("Ycoordinate",std::to_string(xyPosobject.y + (*it).ObjectInfo.position.xCoordinate.value / 1e2),true);
+        jw.addTagToElement("ExtendPerceptionObj", tempStr);
+
+        auto velocity = (*it).ObjectInfo.velocity->choice.polarVelocity.velocityMagnitude.speedValue /100;
+        tempStr = jw.getSimpleTag("Velocity",std::to_string(velocity),true);
+        jw.addFinalTagToElement("ExtendPerceptionObj", tempStr);
+
+        // cout << "mySumoId::"<< mVehicleController->getVehicleId() <<endl;
+        // cout << "ObserverSumoID::"<< Artery2SumoID.find((*it).ObserverID)->second <<endl;
+        // cout << "SumoPerceivedObjectID::"<< Artery2SumoID.find((*it).PerceivedObjectID)->second <<endl;
+        // cout << "speedvalue::"<< velocity <<endl;
+
+
+        /*tempStr = jw.getSimpleTag("xAngle",std::to_string((*it).ObjectInfo.angles->xAngle->value),true);
+        jw.addFinalTagToElement("ExtendPerceptionObj", tempStr);
+
+        tempStr = jw.getSimpleTag("yAngle",std::to_string((*it).ObjectInfo.angles->yAngle->value),true);
+        jw.addFinalTagToElement("ExtendPerceptionObj", tempStr);*/
+
+        if(it == std::prev(mExtendPerceptionList.end())){
+            jw.addFinalTagToElement("ExtendedPerceivedObjects",jw.getJsonElement("ExtendPerceptionObj"));
+        }else{
+            jw.addTagToElement("ExtendedPerceivedObjects",jw.getJsonElement("ExtendPerceptionObj"));
+        }
+    }
+    jw.addFinalTagToElement("Extend Perception List",jw.getJsonElementList("ExtendedPerceivedObjects"));
+
+    //jw.addFinalTagToElement("perceived list", jw.getJsonElementList("Extend Perception List"));
+     
+    return jw.getJsonElement("Extend Perception List");  
+} 
+
+
+
+int F2MD_CPService::RXSocketCpmToPython(int port,const vanetza::asn1::Cpm& cpm, const VehicleDataProvider* mVehicleDataProvider)
+{
+    struct sockaddr_in serv_addr;
+    if (mypythonsocketRX==0)
+	{	
+		if ((mypythonsocketRX = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		{
+			printf("\n Socket creation error \n");
+			std::cout<<"\n Socket creation error \n";
+			return -1;
+		}
+		
+		serv_addr.sin_family = AF_INET;
+		serv_addr.sin_port = htons(port);
+		
+		// Convert IPv4 and IPv6 addresses from text to binary form
+		if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+		{
+			printf("\nInvalid address/ Address not supported \n");
+
+			std::cout<<"\n Invalid address/ Address not supported \n";
+			return -1;
+		}
+	
+		if (connect(mypythonsocketRX, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+		{
+			printf("\nConnection Failed \n");
+			std::cout<<"\n Connection Failed \n";
+			close(mypythonsocketRX);
+			mypythonsocketRX=0;
+			return -1;
+		}
+	}
+
+	// sending cpm message to carla python socket server
+	std::stringstream ss, s1, s2;
+    ss << "sender_artery_id:" << (*cpm).header.stationId << "\n";
+    ss << "sender_sumo_id:" << Artery2SumoID.find((*cpm).header.stationId)->second << "\n";
+    
+    TraCIGeoPosition senderPos,receiverPos;
+    
+    senderPos.longitude = (*cpm).payload.managementContainer.referencePosition.longitude / 1e7;
+    senderPos.latitude = (*cpm).payload.managementContainer.referencePosition.latitude / 1e7;
+
+    receiverPos.longitude = mVehicleDataProvider->longitude().value();
+    receiverPos.latitude = mVehicleDataProvider->latitude().value();
+    
+    ss << "sender_long:" << senderPos.longitude << "\n";
+    ss << "sender_lat:" << senderPos.latitude << "\n";
+    for(int i=0; i < (*cpm).payload.cpmContainers.list.count; i++){
+        if((*cpm).payload.cpmContainers.list.array[i]->containerId == CpmContainerId_originatingVehicleContainer){
+                auto sender_yaw = (*cpm).payload.cpmContainers.list.array[i]->containerData.choice.OriginatingVehicleContainer.orientationAngle.value;
+                sender_yaw /= 10; 
+                ss << "sender_yaw:" << sender_yaw << "\n";
+        }
+    }   
+    // cout << "sender_long:" << (*cpm).payload.managementContainer.referencePosition.longitude / 1e7 << endl;
+    // cout << "sender_lat:" << (*cpm).payload.managementContainer.referencePosition.latitude / 1e7 << endl;
+
+	ss << "receiver_artery_id:" << mVehicleDataProvider->station_id() << "\n";
+	ss << "receiver_sumo_id:" << mVehicleController->getVehicleId() << "\n";
+	ss << "receiver_long:" << std::round(mVehicleDataProvider->longitude().value()*1e7)/1e7<< "\n";
+	ss << "receiver_lat:" << std::round(mVehicleDataProvider->latitude().value()*1e7)/1e7 << "\n";
+	ss << "receiver_speed:" << mVehicleDataProvider->speed().value() << "\n";
+    ss << "receiver_yaw:" << angle_cast(mVehicleController->getHeading()).degree << "\n";
+
+    ss << "Vehicle_Length:" << CPparams.VEHICLE_LENGTH << "\n";
+    ss << "Vehicle_Width:" << CPparams.VEHICLE_WIDTH << "\n";
+    ss << "receiver_type:" << mF2MDFacility.getMbType() << "\n";
+
+    std::string myString = ss.str();
+	char nstr[8]; 
+	int n= myString.length();
+	snprintf(nstr, 7,"%06d", n);
+    
+	::send(mypythonsocketRX , nstr , 6 , 0 );
+    ::send(mypythonsocketRX , myString.c_str() , n , 0 );
+	return 0;
+}
+
+
+int F2MD_CPService::TXSocketCpmToPython(int port, const traci::VehicleController* mVehicleController)
+{
+    struct sockaddr_in serv_addr;
+    if (mypythonsocketTX==0)
+	{	
+		if ((mypythonsocketTX = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		{
+			printf("\n Socket creation error \n");
+			std::cout<<"\n Socket creation error \n";
+			return -1;
+		}
+		
+		serv_addr.sin_family = AF_INET;
+		serv_addr.sin_port = htons(port);
+		
+		// Convert IPv4 and IPv6 addresses from text to binary form
+		if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+		{
+			printf("\nInvalid address/ Address not supported \n");
+
+			std::cout<<"\n Invalid address/ Address not supported \n";
+			return -1;
+		}
+	
+		if (connect(mypythonsocketTX, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+		{
+			printf("\nConnection Failed \n");
+			// std::cout<<"\n Connection Failed \n";
+			close(mypythonsocketTX);
+			mypythonsocketTX=0;
+			return -1;
+		}
+	}
+
+    std::stringstream ss, s1, s2, s3, s4;
+    TraCIGeoPosition senderPos;
+    senderPos.latitude = std::round(mVehicleController->getGeoPosition().latitude.value() *1e7) /1e7;
+    senderPos.longitude = std::round(mVehicleController->getGeoPosition().longitude.value() *1e7) /1e7;
+    TraCIPosition senderXY;
+    senderXY = mTraci.get()->convert2D(senderPos);
+
+    ss << "sender_type:" << mF2MDFacility.getMbType() << "\n";
+	ss << "sender_artery_id:" << mVehicleDataProvider->station_id() << "\n";
+	ss << "sender_sumo_id:" << mVehicleController->getVehicleId() << "\n";
+    ss << "Vehicle_Length:" << CPparams.VEHICLE_LENGTH << "\n";
+    ss << "Vehicle_Width:" << CPparams.VEHICLE_WIDTH << "\n";
+    ss << "attack_type:" << mF2MDFacility.getAttackType() <<  "\n";
+
+    try{
+        if (mF2MDFacility.getMbType() == mbTypes::LocalAttacker || mF2MDFacility.getMbType() == mbTypes::LocalAttacker_detected){
+            if(mF2MDFacility.getAttackType() == cpAttackTypes::AddObj){
+                vector<AttackedObjInfo> objInfo = mF2MDFacility.getAttackedObjInfo();
+                ss << "attacked_obj_sumo_ids:";
+                for(const auto& i:objInfo){
+                    std::string obj_sumo_id = "ghost";
+                    ss << obj_sumo_id << ",";
+                }
+                ss << "\n";
+
+                s1 << "attacked_obj_long:";
+                s2 << "attacked_obj_lat:";
+
+                for(const auto& i:objInfo){
+                    auto objX = senderXY.x + i.PosX / 100;
+                    auto objY = senderXY.y + i.PosY / 100;
+                    TraCIPosition objP;
+                    objP.x = objX;
+                    objP.y = objY;
+                    // cout << "ghost objX::" << objX << endl;
+                    // cout << "ghost objY::" << objY << endl;
+                    // cout << "sender objX::" << senderXY.x << endl;
+                    // cout << "sender objY::" << senderXY.y << endl;
+
+                    TraCIGeoPosition objGeo = mTraci.get()->convertGeo(objP);
+                    s1 << std::round(objGeo.longitude *1e7) /1e7 << ",";
+                    s2 << std::round(objGeo.latitude *1e7) /1e7 << ",";
+                }
+                s1 << "\n";
+                s2 << "\n";
+                ss << s1.str() << s2.str();
+
+                ss << "attacked_obj_yaw:";
+                for(const auto& i:objInfo){
+                    auto yaw = ((900 - int(i.Yaw))+3600) % 3600;
+                    ss << yaw/10 << ",";
+                }
+                ss << "\n"; 
+            }else{
+                vector<AttackedObjInfo> objInfo = mF2MDFacility.getAttackedObjInfo();
+                ss << "attacked_obj_sumo_ids:";
+                for(const auto& i:objInfo){
+                    auto obj_sumo_id = Artery2SumoID.find(i.id)->second;
+                    ss << obj_sumo_id << ",";
+                }
+                ss << "\n";
+
+                s1 << "attacked_obj_long:";
+                s2 << "attacked_obj_lat:";
+                s3 << "attacked_obj_real_long:";
+                s4 << "attacked_obj_real_lat:";
+
+                for(const auto& i:objInfo){
+                    auto objX = senderXY.x + i.PosX / 100;
+                    auto objY = senderXY.y + i.PosY / 100;
+                    TraCIPosition objP, obj_real_pos;
+                    objP.x = objX;
+                    objP.y = objY;
+                    TraCIGeoPosition objGeo = mTraci.get()->convertGeo(objP);
+
+                    TraCIGeoPosition real_objGeo;
+                    auto obj_sumo_id = Artery2SumoID.find(i.id)->second;
+                    obj_real_pos = mTraci.get()->vehicle.getPosition(obj_sumo_id);
+                    real_objGeo = mTraci.get()->convertGeo(obj_real_pos);
+                                    
+                    // cout << "objX::" << objGeo.longitude << endl;
+                    // cout << "objY::" << objGeo.latitude << endl;
+                    // cout << "real_objGeolong::" << real_objGeo.longitude << endl;
+                    // cout << "real_objGeolat::" << real_objGeo.latitude << endl;
+            
+                    s1 << std::round(objGeo.longitude *1e7) /1e7 << ",";
+                    s2 << std::round(objGeo.latitude *1e7) /1e7 << ",";
+                    s3 << std::round(real_objGeo.longitude *1e7) /1e7 << ",";
+                    s4 << std::round(real_objGeo.latitude *1e7) /1e7 << ",";
+                }
+                s1 << "\n";
+                s2 << "\n";
+                s3 << "\n";
+                s4 << "\n";
+                ss << s1.str() << s2.str() << s3.str() << s4.str();
+
+                ss << "attacked_obj_yaw:";
+                for(const auto& i:objInfo){
+                    auto yaw = ((900 - int(i.Yaw))+3600) % 3600;
+                    ss << yaw/10 << ",";
+                }
+                ss << "\n"; 
+            }  
+        }
+    }catch(exception e){
+    }
+
+
+    std::string myString = ss.str();
+	char nstr[8]; 
+	int n= myString.length();
+	snprintf(nstr, 7,"%06d", n);
+    
+	::send(mypythonsocketTX , nstr , 6 , 0 );
+    ::send(mypythonsocketTX , myString.c_str() , n , 0 );
+	return 0;
+}
+
+
+
+int F2MD_CPService::EXSocketCpmToPython(int port,std::string string)
+{
+    struct sockaddr_in serv_addr;
+    if (mypythonsocketEX==0)
+	{	
+		if ((mypythonsocketEX = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		{
+			printf("\n Socket creation error \n");
+			std::cout<<"\n Socket creation error \n";
+			return -1;
+		}
+		
+		serv_addr.sin_family = AF_INET;
+		serv_addr.sin_port = htons(port);
+		
+		// Convert IPv4 and IPv6 addresses from text to binary form
+		if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0) 
+		{
+			printf("\nInvalid address/ Address not supported \n");
+
+			std::cout<<"\n Invalid address/ Address not supported \n";
+			return -1;
+		}
+	
+		if (connect(mypythonsocketEX, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+		{
+			printf("\nConnection Failed \n");
+			std::cout<<"\n Connection Failed \n";
+			close(mypythonsocketEX);
+			mypythonsocketEX=0;
+			return -1;
+		}
+	}
+
+	// sending cpm message to carla python socket server
+    std::string myString = string;
+	char nstr[8]; 
+	int n= myString.length();
+	snprintf(nstr, 7,"%06d", n);
+    
+	::send(mypythonsocketEX , nstr , 6 , 0 );
+    ::send(mypythonsocketEX , myString.c_str() , n , 0 );
+	return 0;
+}
+
 } // namespace artery
+
+

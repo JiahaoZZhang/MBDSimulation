@@ -18,6 +18,7 @@ VehicleKinematics getKinematics(const traci::VehicleController& controller)
     kinematics.geo_position = controller.getGeoPosition();
     kinematics.speed = controller.getSpeed();
     kinematics.heading = controller.getHeading().getTrueNorth();
+    kinematics.sumo_id = controller.getVehicleId();
     return kinematics;
 }
 

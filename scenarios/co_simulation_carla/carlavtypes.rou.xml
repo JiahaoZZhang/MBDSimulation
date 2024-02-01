@@ -26,6 +26,6 @@
   <vType id="vehicle.lincoln.mkz_2017" length="4.904701232910156" width="2.0606582164764404" height="1.478397011756897" vClass="passenger"/>
   <vType id="vehicle.seat.leon" length="4.207873821258545" width="1.8198652267456055" height="1.4694602489471436" vClass="passenger"/>
   <vType id="vehicle.yamaha.yzf" length="2.1907684803009033" width="0.7662330269813538" height="1.6345058679580688" vClass="motorcycle"/>
-  <vType id="vehicle.nissan.patrol" length="4.519999980926514" width="1.9199999570846558" height="1.8871309757232666" vClass="passenger"/>
+  <vType id="vehicle.nissan.patrol" length="4.519999980926514" width="1.9199999570846558" height="1.8871309757232666" accel="3.4" vClass="passenger"/>
   <vType id="vehicle.nissan.micra" length="3.6688475608825684" width="1.8561522960662842" height="1.5232137441635132" vClass="passenger"/>
 </routes>

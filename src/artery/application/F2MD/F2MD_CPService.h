@@ -19,6 +19,7 @@
 #include "artery/traci/VehicleController.h"
 #include "artery/utility/Channel.h"
 #include "artery/utility/Geometry.h"
+#include "artery/traci/Cast.h"
 #include "artery/envmod/LocalEnvironmentModel.h"
 #include "artery/envmod/GlobalEnvironmentModel.h"
 #include "artery/envmod/EnvironmentModelObject.h"
@@ -62,9 +63,10 @@ class F2MD_CPService : public ItsG5BaseService
         void finish() override;
 
     protected:
-        std::string printRXCpmtoJson(const vanetza::asn1::Cpm& msg);
+        std::string printRXCpmtoJson(const vanetza::asn1::Cpm& msg, ExtendPerceptionTable mExtendPerceptionTable);
         std::string printTXCpmtoJson(const vanetza::asn1::Cpm& msg) ;
         std::string printperceivedlisttoJson(const std::string& title, const TrackedObjectsFilterRange& objs);
+        std::string printextendedperceivedlisttoJson (ExtendPerceptionTable mExtendPerceptionTable);
         
     private:
         F2MD_CPFacility mF2MDFacility;
@@ -72,10 +74,13 @@ class F2MD_CPService : public ItsG5BaseService
         const VehicleDataProvider* mVehicleDataProvider = nullptr;
         const traci::VehicleController* mVehicleController = nullptr;
 		const Timer* mTimer = nullptr;
+        std::shared_ptr<const traci::API> mTraci = nullptr;
+
         omnetpp::SimTime mLastCpmTimestamp;
 		omnetpp::SimTime mGenCpmMax;
 		omnetpp::SimTime mGenCpm;
         bool mFixedRate;
+        int Test_mode;
         const LocalEnvironmentModel* mlocalEnvmod;
         GlobalEnvironmentModel* mglobleEnvmod;
         EnvmodPrinter* mEnvmodprint;
@@ -88,10 +93,12 @@ class F2MD_CPService : public ItsG5BaseService
         JsonWriter jwritelem;
         JsonWriter jwritecpmRX;
         JsonWriter jwritecpmTX;
+        JsonWriter jwriteextp;
         
-        ExtendPerceptionTable mExtendPerceptionTable;
         CpmCheckList mCpmCheckList;
-
+        ExtendPerceptionTable mExtendPerceptionTable;
+        std::set<int> MisbehaviorList; 
+        
         const std::string SUMO_id;
         pseudoChangeTypes::PseudoChange myPcType;
         PCPolicyCPM mPCPolicyCPM;
@@ -106,12 +113,15 @@ class F2MD_CPService : public ItsG5BaseService
 		void sendCpm(const omnetpp::SimTime&);
         vanetza::asn1::Cpm createCollectivePerceptionMessage(const VehicleDataProvider&, uint16_t genDeltaTime, const LocalEnvironmentModel&);
 
-        void checkReception(const vanetza::asn1::Cpm&);
+        void checkReception(const vanetza::asn1::Cpm&, ExtendPerceptionTable mExtendPerceptionTable);
         void initParams();
 
         std::string printFinalTagtoJson();
 
+        int RXSocketCpmToPython(int port,const vanetza::asn1::Cpm& cpm, const VehicleDataProvider* mVehicleDataProvider);
+        int TXSocketCpmToPython(int port, const traci::VehicleController* mVehicleController);
 
+        int EXSocketCpmToPython(int port,std::string string);
 };
 
 

@@ -180,7 +180,9 @@ if(WITH_TESTBED)
     add_subdirectory(testbed)
 endif()
 
+
 add_subdirectory(application/F2MD)
+target_link_libraries(F2MD PUBLIC core)
 
 
 install(TARGETS core LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -195,3 +197,5 @@ if(NOT is_multi_config)
         PROGRAMS ${PROJECT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/run_artery.sh.install
         DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME run_artery.sh)
 endif()
+
+

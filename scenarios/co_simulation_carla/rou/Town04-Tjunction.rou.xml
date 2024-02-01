@@ -1,23 +1,29 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     
-    <vehicle id="1" type="vehicle.nissan.micra" depart="1.00">
+    <vehicle id="0" type="vehicle.nissan.micra" depart="1.00">
         <route edges="17.0.00 27.0.00 26.0.00"/>
     </vehicle>
 
-    <vehicle id="0" type="vehicle.nissan.micra" depart="3.00">
+    <vehicle id="1" type="vehicle.nissan.micra" depart="3.00">
         <route edges="52.0.00 27.0.00 26.0.00"/>
     </vehicle>
 
-    <vehicle id="2" type="vehicle.citroen.c3" depart="4.00">
+    <vehicle id="2" type="vehicle.nissan.micra" depart="4.00">
         <route edges="52.0.00 27.0.00 26.0.00"/>
     </vehicle>
     <vehicle id="3" type="vehicle.nissan.micra" depart="4.00">
         <route edges="52.0.00 27.0.00 26.0.00"/>
     </vehicle>
     <vehicle id="4" type="vehicle.nissan.micra" depart="5.00">
-        <route edges="-26.0.00 -27.0.00 -17.0.00"/>
+        <!-- <route edges="-26.0.00 -27.0.00 -17.0.00"/> -->
+         <route edges="-26.0.00 -27.0.00 -52.0.00"/>
     </vehicle>
+
+    <vehicle id="6" type="vehicle.nissan.micra" depart="5.00">
+        <route edges="17.0.00 27.0.00 26.0.00"/>
+    </vehicle>
+
     <vehicle id="5" type="vehicle.nissan.micra" depart="6.00">
         <route edges="52.0.00 27.0.00 26.0.00"/>
     </vehicle>

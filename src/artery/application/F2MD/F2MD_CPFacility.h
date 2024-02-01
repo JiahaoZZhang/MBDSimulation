@@ -72,20 +72,23 @@ using namespace omnetpp;
 using namespace artery;
 //using namespace veins;
 
+
+
+
 class F2MD_CPFacility
 {
 
     public:
         F2MD_CPFacility(){};
-        F2MD_CPFacility(const artery::VehicleDataProvider* VehProvider,
-             const traci::VehicleController* VehController, F2MD_CPParameters& params, unsigned long* PseudonymID);
+        F2MD_CPFacility(const artery::VehicleDataProvider* VehProvider, const traci::VehicleController* VehController, F2MD_CPParameters& params, unsigned long* PseudonymID);
         void initialize();
         void finish();
         void induceAttack(CpmPayload_t* cpm);
-        double onCPM(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId,
-                                 CpmCheckList& mCpmCheckList, std::map<int,int>& PseudoID2ArteryID);
-        int getAttackType(){return myAttackType;};
+        double onCPM(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId, CpmCheckList& mCpmCheckList);
+        double getAttackType(){return myAttackType;};
         mbTypes::Mbs getMbType(){return myMdType;};
+
+        vector<AttackedObjInfo> getAttackedObjInfo(){return mAttackedObjInfoList;};
 
 
     private:
@@ -105,9 +108,8 @@ class F2MD_CPFacility
         unsigned long* myPseudonym;
         std::string printFinalTagtoJson();
 
-        std::string writeV2XPDU(const vanetza::asn1::Cpm& msg,const::vanetza::MacAddress& neighborMAcId, std::map<int,int>& PseudoID2ArteryID);
-        std::string writeReport(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId, 
-                            CpmCheckList& mCpmCheckList, vanetza::asn1::Cpm& lastCpm, std::map<int,int>& PseudoID2ArteryID);
+        std::string writeV2XPDU(const vanetza::asn1::Cpm& msg,const::vanetza::MacAddress& neighborMAcId);
+        std::string writeReport(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId, CpmCheckList& mCpmCheckList, vanetza::asn1::Cpm& lastCpm);
 
         MDCpmAttack mdAttack;
         mbTypes::Mbs myMdType;
@@ -119,6 +121,7 @@ class F2MD_CPFacility
 
         CpmChecks mCpmChecks;
 
+        vector<AttackedObjInfo> mAttackedObjInfoList;
 };
 
 #endif /* F2MD_CPFACILITY_H_ */

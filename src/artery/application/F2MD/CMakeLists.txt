@@ -105,6 +105,6 @@ target_sources(F2MD PUBLIC
 )
 
 target_link_libraries(F2MD PUBLIC envmod)
-target_link_libraries(F2MD PUBLIC core)
+
 
 generate_opp_message(BSM.msg TARGET F2MD DIRECTORY F2MD_msgs)

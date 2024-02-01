@@ -31,6 +31,8 @@ F2MD_CPFacility::F2MD_CPFacility(const artery::VehicleDataProvider* VehProvider,
 */
 void F2MD_CPFacility::initialize()
 {
+    mAttackedObjInfoList.clear();
+
     params = params;
     const std::string id = mVehicleController->getVehicleId();
     auto& vehicle_api = mVehicleController->getTraCI()->vehicle;
@@ -113,9 +115,7 @@ void F2MD_CPFacility::initialize()
         //string outjsonfilecpmReport_name = "output/ATTACK/CPM/Report/logjson_cpm_report";
         string outjsonfilecpmReport_name = "output/ATTACK/CPM/Report/";
         outjsonfilecpmReport_name.append(cpAttackTypes::AttackNames[params->CP_LOCAL_ATTACK_TYPE]);
-        if(params->KeepSameID == true){
-            outjsonfilecpmReport_name.append("_KeepSameID");
-        }
+
          //mkdir savePath
         struct stat info;
         if ((stat(outjsonfilecpmReport_name.c_str(), &info) != 0) || !(info.st_mode & S_IFDIR)) {
@@ -125,7 +125,7 @@ void F2MD_CPFacility::initialize()
         outjsonfilecpmReport_name.append ("/logjson_cpm_report_");
 
         outjsonfilecpmReport_name.append(str_id);
-        //outjsonfilecpmReport_name.append (to_string(params->CP_LOCAL_ATTACK_TYPE));
+        // outjsonfilecpmReport_name.append (to_string(params->CP_LOCAL_ATTACK_TYPE));
         outjsonfilecpmReport_name.append (suffix);
         outputjsonfilecpmReport.open(outjsonfilecpmReport_name,ios::out);
         jwritecpmReport.openJsonElementList("CPM_REPORT");
@@ -138,11 +138,13 @@ void F2MD_CPFacility::initialize()
    *  @param CpmPayload_t* cpm payload data
 */
 void F2MD_CPFacility::induceAttack(CpmPayload_t* cpm){
-    if (myMdType == mbTypes::LocalAttacker && simTime().dbl() > params->START_CPM_ATTACK){
+    if (myMdType != mbTypes::Genuine && simTime().dbl() > params->START_CPM_ATTACK){
         for(int cpmContainerIndx = 0;  cpmContainerIndx < cpm->cpmContainers.list.count; cpmContainerIndx++){
             ConstraintWrappedCpmContainers_t* pd_DF = &cpm->cpmContainers;
             if(pd_DF->list.array[cpmContainerIndx]->containerId == CpmContainerId_perceivedObjectContainer){
                 mdAttack.launchAttack(myAttackType, cpm);
+                
+                mAttackedObjInfoList = mdAttack.getAttackedObjInfo();
             }
         }
         // std::cout << "---------------launch attack, success --------- \n" <<std::endl;
@@ -172,7 +174,7 @@ mbTypes::Mbs F2MD_CPFacility::induceMisbehavior(double LocalAttackerRatio)
 {   
     // corrected, because the first node is always Genuinem, cant adapt our scenario
     double realFactor = totalCPLocalAttacker / (totalCPGenuine + totalCPLocalAttacker);
-    if (LocalAttackerRatio > realFactor) {
+    if (LocalAttackerRatio >= realFactor) {
         totalCPLocalAttacker++;
         return mbTypes::LocalAttacker;
     }
@@ -186,13 +188,14 @@ mbTypes::Mbs F2MD_CPFacility::induceMisbehavior(double LocalAttackerRatio)
    *  @brief perform all the checks on the cpm received to detect a potential attack
    *  @param vanetza::asn1::Cpm& cpm received
 */
-double F2MD_CPFacility::onCPM(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId,
-                                         CpmCheckList& mCpmCheckList, std::map<int,int>& PseudoID2ArteryID){  
+double F2MD_CPFacility::onCPM(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId, CpmCheckList& mCpmCheckList){  
     
     // add local perception list
     vanetza::asn1::Cpm lastCpm;
-    treatAttackFlags();
-
+    if(myMdType != mbTypes::Genuine){
+        treatAttackFlags();
+    }
+    
     // run checkst
     auto vehicle_api = mVehicleController->getTraCI();
     double checkfailed = mCpmChecks.CpmChecksum(msg, &detectedNodes, mCpmCheckList, &vehicle_api);
@@ -226,7 +229,7 @@ double F2MD_CPFacility::onCPM(const vanetza::asn1::Cpm& msg, const::vanetza::Mac
 // Generate reports for the Misbehavior Authority
     if (checkfailed && (myMdType == mbTypes::Genuine)) {
         // std::cout << "********check report ******"<< std::endl;
-        jwritecpmReport.addTagToElement("CPM_REPORT", writeReport(msg, neighborMAcId, mCpmCheckList, lastCpm, PseudoID2ArteryID));
+        jwritecpmReport.addTagToElement("CPM_REPORT", writeReport(msg, neighborMAcId, mCpmCheckList, lastCpm));
 
        
 
@@ -279,6 +282,7 @@ void F2MD_CPFacility::treatAttackFlags(){
         auto& vehicle_api = mVehicleController->getTraCI()->vehicle;
         const std::string id = mVehicleController->getVehicleId();
         vehicle_api.setColor(id, libsumo::TraCIColor(255, 255, 255, 255));
+        myMdType = mbTypes::LocalAttacker_detected;
     }
 }
 
@@ -325,7 +329,7 @@ std::string F2MD_CPFacility::printFinalTagtoJson() {
 }
 
 
-std::string F2MD_CPFacility::writeV2XPDU(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId, std::map<int,int>& PseudoID2ArteryID)
+std::string F2MD_CPFacility::writeV2XPDU(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId)
 {
     string macid="";
 
@@ -342,16 +346,7 @@ std::string F2MD_CPFacility::writeV2XPDU(const vanetza::asn1::Cpm& msg, const::v
     tempStr = jw.getSimpleTag("sourcePseudoId", std::to_string(msg->header.stationId),true);
     jw.addTagToElement("oneV2XPdu", tempStr);
 
-    if(params->EnablePC == true){
-        tempStr = jw.getSimpleTag("sourceRealId", std::to_string(PseudoID2ArteryID.find(msg->header.stationId)->second), true);
-        jw.addTagToElement("oneV2XPdu", tempStr);
-    }else{
-        tempStr = jw.getSimpleTag("sourceRealId", std::to_string(msg->header.stationId),true);
-        jw.addTagToElement("oneV2XPdu", tempStr);
-    }
-    
-
-    tempStr = jw.getSimpleTag("sourceMacId", macid,true);
+    tempStr = jw.getSimpleTag("sourceRealId", macid,true);
     jw.addTagToElement("oneV2XPdu", tempStr);
 
     long rfT;
@@ -427,8 +422,7 @@ std::string F2MD_CPFacility::writeV2XPDU(const vanetza::asn1::Cpm& msg, const::v
 /**
    *  @brief write a new report
 */
-std::string F2MD_CPFacility::writeReport(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId,
-             CpmCheckList& mCpmCheckList, vanetza::asn1::Cpm& lastCpm, std::map<int,int>& PseudoID2ArteryID)
+std::string F2MD_CPFacility::writeReport(const vanetza::asn1::Cpm& msg, const::vanetza::MacAddress& neighborMAcId, CpmCheckList& mCpmCheckList, vanetza::asn1::Cpm& lastCpm)
 {
         //BasicCheckReport bcr = BasicCheckReport(reportBase);
         //bcr.setReportedCheck(bsmCheck);
@@ -505,12 +499,12 @@ std::string F2MD_CPFacility::writeReport(const vanetza::asn1::Cpm& msg, const::v
 
     if (consistencycheckon)
     {
-        jw.addTagToElement("V2XPduEvidence",writeV2XPDU(msg, neighborMAcId, PseudoID2ArteryID));
-        jw.addFinalTagToElement("V2XPduEvidence",writeV2XPDU(lastCpm, neighborMAcId, PseudoID2ArteryID));
+        jw.addTagToElement("V2XPduEvidence",writeV2XPDU(msg, neighborMAcId));
+        jw.addFinalTagToElement("V2XPduEvidence",writeV2XPDU(lastCpm, neighborMAcId));
     } 
     else 
     {
-        jw.addFinalTagToElement("V2XPduEvidence",writeV2XPDU(msg,neighborMAcId, PseudoID2ArteryID));
+        jw.addFinalTagToElement("V2XPduEvidence",writeV2XPDU(msg,neighborMAcId));
     } 
         
     //

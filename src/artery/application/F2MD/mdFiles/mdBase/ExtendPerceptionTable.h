@@ -36,8 +36,13 @@ struct ExtendPerceivedObject
     uint32_t ObserverID;
     ReferencePosition_t ReferencePosition;
 
+    
     /* kinematic data of perceived object */
     PerceivedObject_t ObjectInfo;
+    CartesianCoordinateLarge_t xCoordinateValue;
+    CartesianCoordinateLarge_t yCoordinateValue;
+    SpeedValue_t velocityMagnitudeValue;
+
 
     bool operator == (const ExtendPerceivedObject &e) const{
         return ((this->LastUpdateTime == e.LastUpdateTime) && (this->PerceivedObjectID == e.PerceivedObjectID));
@@ -69,6 +74,7 @@ struct ExtendPerceivedObject
         this->ObserverID = e.ObserverID;
         this->PerceivedObjectID = e.PerceivedObjectID;
         this->ReferencePosition = e.ReferencePosition;
+        
         return *this;
     }
 };
@@ -94,7 +100,7 @@ public:
 
     std::pair<ExtendPerceivedObject, bool> getObjInfo(int objID);
     int64_t getLastTimeStamp(){return this->LastTimeStamp;};
-    std::set<ExtendPerceivedObject> getExtendPerceptionList(){return this->ExtendPerceptionList;};
+    std::set<ExtendPerceivedObject>getExtendPerceptionList(){return this->ExtendPerceptionList;};
 
     ~ExtendPerceptionTable(){};
 };

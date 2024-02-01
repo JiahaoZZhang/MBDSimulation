@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    
+    <!-- (Jeremy) Test TRACI app -->
+    <vehicle id="other" type="vehicle.nissan.micra" depart="1.00">
+        <route edges="52.0.00 27.0.00 26.0.00"/>
+        <!-- <param key="junctionModel.ignoreIDs" value="ego"/> -->
+    </vehicle>
+
+    <vehicle id="other_follower" type="vehicle.nissan.patrol" depart="1.00">
+        <route edges="52.0.00 27.0.00 26.0.00"/>
+        <!-- <param key="junctionModel.ignoreIDs" value="ego"/> -->
+    </vehicle>
+
+    <vehicle id="ego" type="vehicle.nissan.micra" depart="3.00">
+        <route edges="-0.0.00 30.0.00 29.0.00"/>
+    </vehicle>
+
+    <vehicle id="ego_follower" type="vehicle.nissan.micra" depart="3.00">
+        <route edges="-0.0.00 30.0.00 29.0.00"/>
+    </vehicle>
+
+
+
+    <!-- (Jeremy) End test TRACI app -->
+</routes>

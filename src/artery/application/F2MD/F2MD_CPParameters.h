@@ -50,8 +50,8 @@ public:
     double CP_LOCAL_ATTACKER_PROB = 0.00;
 
     cpAttackTypes::Attacks CP_LOCAL_ATTACK_TYPE = cpAttackTypes::Genuine;
-    cpAttackTypes::Attacks MixCpLocalAttacksList[19] = {cpAttackTypes::DropObj,
-        cpAttackTypes::DropAllObj, cpAttackTypes::AddObj,
+    cpAttackTypes::Attacks MixCpLocalAttacksList[22] = {cpAttackTypes::DropObj,
+        cpAttackTypes::DropAllObj, cpAttackTypes::AddObj, cpAttackTypes::DropObj_KeepSameID,
         cpAttackTypes::SingleRandomDist, cpAttackTypes::SingleRandomSpeed,
         cpAttackTypes::MultiConstDist, cpAttackTypes::MultiConstSpeed,
         cpAttackTypes::MultiRandomDist, cpAttackTypes::MultiRandomSpeed,
@@ -59,7 +59,8 @@ public:
         cpAttackTypes::SingleRandomDistOffset, cpAttackTypes::SingleRandomSpeedOffset,
         cpAttackTypes::MultiConstDistOffset, cpAttackTypes::MultiConstSpeedOffset,
         cpAttackTypes::MultiRandomDistOffset, cpAttackTypes::MultiRandomSpeedOffset,
-        cpAttackTypes::SingleConstDist, cpAttackTypes::SingleConstSpeed};
+        cpAttackTypes::SingleConstDist, cpAttackTypes::SingleConstSpeed,
+        cpAttackTypes::SingleRandomDistOffset_KeepSameID,cpAttackTypes::SingleRandomSpeedOffset_KeepSameID};
 
     // -------------- CPM ADVANCED PARAMETERS --------------
     double START_CPM_ATTACK = 5; // attack start delay in seconds
@@ -70,11 +71,13 @@ public:
     double cpParVar = 0.65;
     double RandomDistOffsetX = 40.0;
     double RandomDistOffsetY = 40.0;
-    double RandomSpeed =28.0;
+    double RandomSpeed = 40.0;
     double RandomSpeedOffset = 7.0;
     double RandomAccel = 2.0;
+    double MaxRadius = 40;
 
-    double MAX_PLAUSIBLE_ANGLE_CHANGE = 90; // Unit 1 degree/s
+
+    double MAX_PLAUSIBLE_ANGLE_CHANGE = 180; // Unit 1 degree/s
     double TOLERANCE_EXCEED_SPEED = 4.0;
     double TOLERANCE_DEARTH_SPEED = 5.0;
 
@@ -104,16 +107,16 @@ public:
     int RSUintersectionReferenceID = 0;
 
     // ------------- VEHICLE CHARACTERISTICS SETTING ------------
-    double VEHICLE_LENGTH = 5.0;
-    double VEHICLE_WIDTH = 3.6;
+    double VEHICLE_LENGTH = 3.6;
+    double VEHICLE_WIDTH = 1.8;
 
-    // ------ PSEUDONYM PARAMETERS
+    // ------ PSEUDONYM PARAMETERS ---------------------------
     double Period_Change_Time = 240;
     int Tolerance_Buffer = 10;
     double Period_Change_Distance = 80;
     double Random_Change_Chance = 0.1;
     
-    bool EnablePC = true;
+    bool EnablePC = false;
     pseudoChangeTypes::PseudoChange PC_TYPE = pseudoChangeTypes::Car2car;
     // Periodical, Disposable, DistanceBased, Random, Car2car
 

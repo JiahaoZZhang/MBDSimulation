@@ -182,7 +182,6 @@ double CpmChecks::CpmChecksum(const vanetza::asn1::Cpm& msg, NodeTableCpm *detec
                                                 po->acceleration->choice.polarAcceleration.accelerationMagnitude.accelerationMagnitudeValue,
                                                 po->velocity->choice.polarVelocity.velocityDirection.value, 
                                                 po->velocity->choice.polarVelocity.velocityMagnitude.speedConfidence,
-                                                oldCpmObj->velocity->choice.polarVelocity.velocityDirection.value,
                                                 delta_Time, kalmanSC);
 
                         TotalkalmanSpeedConsistencyResult += kalmanSpeedConsistencyResult;
@@ -198,7 +197,6 @@ double CpmChecks::CpmChecksum(const vanetza::asn1::Cpm& msg, NodeTableCpm *detec
                                                         po->acceleration->choice.polarAcceleration.accelerationMagnitude.accelerationMagnitudeValue,
                                                         po->velocity->choice.polarVelocity.velocityMagnitude.speedConfidence, 
                                                         po->velocity->choice.polarVelocity.velocityDirection.value,
-                                                        oldCpmObj->velocity->choice.polarVelocity.velocityDirection.value,
                                                         delta_Time, kalmanPSC, retVal);
 
                         kalmanPositionSpeedConsistancyPositionResult = retVal[0];
@@ -466,7 +464,6 @@ double CpmChecks::speedConsistency(double curSpeed, double curSpeedDirection, do
     // check if the velocity magnitude change is plausible
     double speedDelta = curSpeed - oldSpeed;
     if(speedDelta >= 0){
-        // MAX_PLAUSIBLE_ACCEL, unit 1 m/s**2
         if(fabs(speedDelta) > fabs(params->MAX_PLAUSIBLE_ACCEL) * time * 1e2){
             return 1;
         }
@@ -486,7 +483,6 @@ double CpmChecks::speedConsistency(double curSpeed, double curSpeedDirection, do
         angleDelta = ((angleDelta) % 3600 + 3600) % 3600;
     }
 
-    // MAX_PLAUSIBLE_ANGLE_CHANGE, unit 1 degree
     if(angleDelta > params->MAX_PLAUSIBLE_ANGLE_CHANGE * time * 10){
         return 1;
     }
@@ -580,11 +576,11 @@ double CpmChecks::KalmanPositionConsistency(double curXPosition, double curYPosi
 
             double ret_1 = 1 - sqrt(pow(Delta[0], 2.0) + pow(Delta[1], 2.0)) / (4 * params->KALMAN_POS_RANGE * curPosConf * time);
             
-            // cout << "---------KALMAN_POS_RANGE :: " << params->KALMAN_POS_RANGE  << endl;
-            // cout << "---------curPosConf :: " << curPosConf  << endl;
-            // cout << "---------part 1 :: " << sqrt(pow(Delta[0], 2.0) + pow(Delta[1], 2.0))  << endl;
-            // cout << "---------part 2 :: " << (4 * params->KALMAN_POS_RANGE * curPosConf * time) << endl;
-            // cout << "---------ret_1 :: " << ret_1 << endl;
+            cout << "---------KALMAN_POS_RANGE :: " << params->KALMAN_POS_RANGE  << endl;
+            cout << "---------curPosConf :: " << curPosConf  << endl;
+            cout << "---------part 1 :: " << sqrt(pow(Delta[0], 2.0) + pow(Delta[1], 2.0))  << endl;
+            cout << "---------part 2 :: " << (4 * params->KALMAN_POS_RANGE * curPosConf * time) << endl;
+            cout << "---------ret_1 :: " << ret_1 << endl;
 
             if (isnan(ret_1)) {
                 ret_1 = 1;
@@ -608,36 +604,27 @@ double CpmChecks::KalmanPositionConsistency(double curXPosition, double curYPosi
  * @brief Check the change of the transmitted disntance to the perceived object is
  * inconsistent with the speed of the same perceived object, the simple linear kalman filter can be used here
  * @param curSpeed Unit 0.01 m/s
- * @param curAccel Unit 0.1 m/s^2
+ * @param curAccel Unit 0.01 m/s^2
  * @param curSpeedDirection Unit 0.1 degree
  * @param curSpeedConfidence Unit 0.01 m/s
  * @param time Unit 1s
  * @param kalmanSI 
  * @return double 
  */
-double CpmChecks::KalmanSpeedConsistancy(double curSpeed, double curAccel, double curSpeedDirection, double curSpeedConfidence,
-                                        double oldSpeedDirection, double time, Kalman_SI* kalmanSI){
+double CpmChecks::KalmanSpeedConsistancy(double curSpeed, double curAccel, double curSpeedDirection,
+                                        double curSpeedConfidence, double time, Kalman_SI* kalmanSI){
                                         
     double curSpdConfX, curSpdConfY;
     double curSpdX, curSpdY, curAccX, curAccY;
 
     curSpdX = (curSpeed/100) * sin(curSpeedDirection * PI / 1800);
     curSpdY = (curSpeed/100) * cos(curSpeedDirection * PI / 1800);
-    if(curAccel >= 160){
-        curAccel = 0;
-    }
-    curAccX = (curAccel/10) * sin(curSpeedDirection * PI / 1800);
-    curAccY = (curAccel/10) * cos(curSpeedDirection * PI / 1800);
+    curAccX = (curAccel/100) * sin(curSpeedDirection * PI / 1800);
+    curAccY = (curAccel/100) * cos(curSpeedDirection * PI / 1800);
 
     // cout << "---------kalman position consistency init :: " << kalmanSI->isInit() << endl;
-    auto rotation_angle_1 = ((int)(curSpeedDirection - oldSpeedDirection)% 3600 + 3600) % 3600;
-    auto rotation_angle_2 = ((int)(oldSpeedDirection - curSpeedDirection)% 3600 + 3600) % 3600;
 
     if (kalmanSI->isInit() == false) {
-        kalmanSI->setInitial(curSpdX, curSpdY);
-        return 0;
-    }
-    else if(std::min(rotation_angle_1,rotation_angle_2) > 600){
         kalmanSI->setInitial(curSpdX, curSpdY);
         return 0;
     }
@@ -645,14 +632,12 @@ double CpmChecks::KalmanSpeedConsistancy(double curSpeed, double curAccel, doubl
         if (time < params->MAX_KALMAN_TIME) {
             float Delta[2];
 
-            if(curSpeedConfidence != SpeedConfidence_unavailable  && curSpeedConfidence > params->KALMAN_MIN_SPEED_RANGE){
+            if(curSpeedConfidence != SpeedConfidence_unavailable){
                 curSpdConfX = (curSpeedConfidence/100) * sin(curSpeedDirection * PI / 1800);
                 curSpdConfY = (curSpeedConfidence/100) * cos(curSpeedDirection * PI / 1800);
             }else{
-                // curSpdConfX = params->KALMAN_MIN_SPEED_RANGE * sin(curSpeedDirection * PI / 1800);
-                // curSpdConfY = params->KALMAN_MIN_SPEED_RANGE * cos(curSpeedDirection * PI / 1800); 
                 curSpdConfX = params->KALMAN_MIN_SPEED_RANGE;
-                curSpdConfY = params->KALMAN_MIN_SPEED_RANGE; 
+                curSpdConfY = params->KALMAN_MIN_SPEED_RANGE;
             }
 
             kalmanSI->getDeltaPos(time, curSpdX, curSpdY, curAccX,
@@ -698,7 +683,7 @@ double CpmChecks::KalmanSpeedConsistancy(double curSpeed, double curAccel, doubl
  * @param curXPositionConfidence Unit 0.01m
  * @param curYPositionConfidence Unit 0.01m
  * @param curSpeed Unit 0.01m/s
- * @param curAccel Unit 0.1m/s-2
+ * @param curAccel Unit 0.01m/s-2
  * @param curSpeedConfidence Unit 0.01m
  * @param curSpeedDirection Unit 0.1 degree
  * @param time Unit 1s
@@ -706,61 +691,49 @@ double CpmChecks::KalmanSpeedConsistancy(double curSpeed, double curAccel, doubl
  * @param retVal 
  */
 void CpmChecks::KalmanPositionSpeedConsistancy(double curXPosition, double curYPosition, double curXPositionConfidence, double curYPositionConfidence, 
-                                                double curSpeed, double curAccel, double curSpeedConfidence, double curSpeedDirection, double oldSpeedDirection, 
+                                                double curSpeed, double curAccel, double curSpeedConfidence, double curSpeedDirection, 
                                                 double time, Kalman_SVI* kalmanSVI, double retVal[]){
-    
-    double curSpdConfX, curSpdConfY;                                                    
-    if(curAccel >= 160){
-        curAccel = 0;
-    }
-    double Ax = (curAccel/10) * sin(curSpeedDirection * PI / 1800);
-    double Ay = (curAccel/10) * cos(curSpeedDirection * PI / 1800);
+
+    double Ax = (curAccel/100) * sin(curSpeedDirection * PI / 1800);
+    double Ay = (curAccel/100) * cos(curSpeedDirection * PI / 1800);
     double curSpeedX = (curSpeed/100) * sin(curSpeedDirection * PI / 1800);
     double curSpeedY = (curSpeed/100) * cos(curSpeedDirection * PI / 1800);
-
-    auto rotation_angle_1 = ((int)(curSpeedDirection - oldSpeedDirection)% 3600 + 3600) % 3600;
-    auto rotation_angle_2 = ((int)(oldSpeedDirection - curSpeedDirection)% 3600 + 3600) % 3600;
+    double curPosConfX = curXPositionConfidence / 100;
+    double curPosConfY = curYPositionConfidence / 100;
+    double curSpdConfX = (curSpeedDirection/100) * sin(curSpeedDirection * PI / 1800);
+    double curSpdConfY = (curSpeedDirection/100) * cos(curSpeedDirection * PI / 1800);
     
 
     if (!kalmanSVI->isInit()) {
         retVal[0] = 0;
         retVal[1] = 0;
         kalmanSVI->setInitial(curXPosition, curYPosition, curSpeedX, curSpeedY);
-    }
-    else if(std::min(rotation_angle_1,rotation_angle_2) > 600){
-        retVal[0] = 0;
-        retVal[1] = 0;
-        kalmanSVI->setInitial(curXPosition, curYPosition, curSpeedX, curSpeedY);   
-    }
-    else {
+    }else {
         if (time < params->MAX_KALMAN_TIME) {
             float Delta[4];
 
            
-            if ((curXPositionConfidence < params->KALMAN_MIN_POS_RANGE * 100) || (curXPositionConfidence == CoordinateConfidence_unavailable)) {
-                curXPositionConfidence = params->KALMAN_MIN_POS_RANGE;
+            if (curPosConfX < params->KALMAN_MIN_POS_RANGE) {
+                curPosConfX = params->KALMAN_MIN_POS_RANGE;
             }
 
-            if ((curYPositionConfidence < params->KALMAN_MIN_POS_RANGE * 100) || (curYPositionConfidence == CoordinateConfidence_unavailable)) {
-                curYPositionConfidence = params->KALMAN_MIN_POS_RANGE;
+            if (curPosConfY < params->KALMAN_MIN_POS_RANGE) {
+                curPosConfY = params->KALMAN_MIN_POS_RANGE;
             }
 
-
-            if(curSpeedConfidence != SpeedConfidence_unavailable && curSpeedConfidence > params->KALMAN_MIN_SPEED_RANGE){
-                curSpdConfX = (curSpeedConfidence/100) * sin(curSpeedDirection * PI / 1800);
-                curSpdConfY = (curSpeedConfidence/100) * cos(curSpeedDirection * PI / 1800);      
-            }else{
-                // curSpdConfX = params->KALMAN_MIN_SPEED_RANGE * sin(curSpeedDirection * PI / 1800);
-                // curSpdConfY = params->KALMAN_MIN_SPEED_RANGE * cos(curSpeedDirection * PI / 1800);
+            if (curSpdConfX < params->KALMAN_MIN_SPEED_RANGE) {
                 curSpdConfX = params->KALMAN_MIN_SPEED_RANGE;
-                curSpdConfY = params->KALMAN_MIN_SPEED_RANGE;                
+            }
+
+            if (curSpdConfY < params->KALMAN_MIN_SPEED_RANGE) {
+                curSpdConfY = params->KALMAN_MIN_SPEED_RANGE;
             }
 
             kalmanSVI->getDeltaPos(time, curXPosition, curYPosition,
-                curSpeedX, curSpeedY, Ax, Ay, curXPositionConfidence, curYPositionConfidence,
+                curSpeedX, curSpeedY, Ax, Ay, curPosConfX, curPosConfY,
                 curSpdConfX, curSpdConfY, Delta);
 
-            double curPosConf = sqrt(pow(curXPositionConfidence, 2.0) + pow(curYPositionConfidence, 2.0));
+            double curPosConf = sqrt(pow(curPosConfX, 2.0) + pow(curPosConfY, 2.0));
             double ret_1 = 1 - sqrt(pow(Delta[0], 2.0) + pow(Delta[2], 2.0)) / (4 * params->KALMAN_POS_RANGE * curPosConf * time);
             // cout << "---------ret_1 :: " << ret_1 << endl;
             if (isnan(ret_1)) {

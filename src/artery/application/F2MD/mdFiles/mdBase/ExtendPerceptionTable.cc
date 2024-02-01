@@ -18,9 +18,9 @@
  * @param currentTime millisecond
  */
 void ExtendPerceptionTable::updateTable(const vanetza::asn1::Cpm* cpm, int64_t currentTime){
+    
 
     auto observerID = (*cpm)->header.stationId;
-    
     const auto LTS = (*cpm)->payload.managementContainer.referenceTime;
     long LastUpdateTime;
     auto res = asn_INTEGER2long(&LTS, &LastUpdateTime);
@@ -31,15 +31,22 @@ void ExtendPerceptionTable::updateTable(const vanetza::asn1::Cpm* cpm, int64_t c
     for(int i=0; i< containerSize; i++){
         if ((*cpm)->payload.cpmContainers.list.array[i]->containerData.present == WrappedCpmContainer__containerData_PR_PerceivedObjectContainer){
             auto POC = (*cpm)->payload.cpmContainers.list.array[i]->containerData.choice.PerceivedObjectContainer;
-            auto perceivedObjSize = POC.numberOfPerceivedObjects;
+            auto perceivedObjSize = POC.perceivedObjects.list.count;
             for(int j=0; j < perceivedObjSize; j++){
                 auto perceivedObject = POC.perceivedObjects.list.array[j];
                 auto res = this->find(*perceivedObject->objectId);
-
-                ExtendPerceivedObject newEPO;
+                
                 PerceivedObject_t* newperceivedObject = (PerceivedObject_t*)vanetza::asn1::copy(asn_DEF_PerceivedObject,perceivedObject);
+                ExtendPerceivedObject newEPO;
                 newEPO.LastUpdateTime = LastUpdateTime;
                 newEPO.ObjectInfo = *newperceivedObject;
+                // newEPO.xCoordinateValue = (*perceivedObject).position.xCoordinate.value;
+                // newEPO.yCoordinateValue = (*perceivedObject).position.yCoordinate.value;
+                // newEPO.velocityMagnitudeValue = (*perceivedObject).velocity->choice.polarVelocity.velocityMagnitude.speedValue;
+                // cout << "observerID::" << observerID << endl;
+                // cout << "(*perceivedObject).objectId::" << *perceivedObject->objectId << endl;
+                // cout << "(*perceivedObject).speedValue::" <<(*perceivedObject).velocity->choice.polarVelocity.velocityMagnitude.speedValue << endl;
+                // cout << "newEPO.ObjectInfo.speedValue::" << newEPO.ObjectInfo.velocity->choice.polarVelocity.velocityMagnitude.speedValue << endl;
                 newEPO.LastRecordTime = currentTime;
                 newEPO.ObserverID = observerID;
                 newEPO.PerceivedObjectID = *perceivedObject->objectId;

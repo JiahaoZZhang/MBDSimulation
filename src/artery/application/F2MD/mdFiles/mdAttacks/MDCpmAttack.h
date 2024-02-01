@@ -24,18 +24,29 @@
 #include "artery/application/CpmObject.h"
 #include <vanetza/asn1/its/CpmPayload.h>
 #include "traci/LiteAPI.h"
+#include "artery/traci/Cast.h"
 #include "artery/traci/VehicleController.h"
+
 
 using namespace omnetpp;
 using namespace traci;
+
+struct AttackedObjInfo{
+    int id = 0;
+    double PosX = 0;
+    double PosY = 0;
+    double Yaw = 0;
+};
 
 class MDCpmAttack {
     private:
         GeneralLib genLib = GeneralLib();
         simtime_t* beaconInterval;
 
-        double MaxRadarRange;
-        double MaxMapBoundary;
+        // double MaxRadarRange;
+        // double MaxMapBoundary;
+
+        double ConstRadius;
 
         double ConstDistX;
         double ConstDistY;
@@ -59,6 +70,8 @@ class MDCpmAttack {
         void InitSelectedStationID(PerceivedObjectContainer *poc);
         const traci::VehicleController* mVehicleController;
 
+        vector<AttackedObjInfo> mAttackedObjInfoList;
+
     public:
 
         MDCpmAttack();
@@ -68,6 +81,8 @@ class MDCpmAttack {
         void launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t* cpm);
 
         void setBeaconInterval(simtime_t* beaconInterval);
+
+        vector<AttackedObjInfo> getAttackedObjInfo(){return mAttackedObjInfoList;};
 };
 
 #endif

@@ -26,7 +26,6 @@ module Car like INetworkNode
         bool withAntennaMobility = default(false);
         *.interfaceTableModule = default(absPath(".interfaceTable"));
         mobility.visualRepresentation = "^";
-        int numPcapRecorders = default(0); // no of PcapRecorders.
 
     gates:
         input radioIn[numRadios] @directIn;

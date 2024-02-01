@@ -20,6 +20,9 @@ simple F2MD_CPService like ItsG5Service
 
     double maxInterval @unit(s) = default(1.0s);
     bool fixedRate = default(true);
+    int Test_mode = default(0);
+    bool KeepSameID = default(true);
+
 
     // Attacks parameters
     bool MixCpLocalAttacks = default(false);
@@ -38,17 +41,17 @@ simple F2MD_CPService like ItsG5Service
     double START_CPM_ATTACK = default(10);
     double MAX_CPM_DELTATIME = default(5);
     double MAX_CPM_HISTORY_TIME = default(15);
-    bool KeepSameID = default(false);
 
     double cpParVar = default(0.55);
     double RandomDistOffsetX = default(70.0);
     double RandomDistOffsetY = default(70.0);
-    double RandomSpeed = default(28.0);
+    double RandomSpeed = default(40.0);
     double RandomSpeedOffset = default(7.0);
     double RandomAccel = default(2.0);
+    double MaxRadius = default(40.0);
     double MaxMapBoundary = default(200.0);
 
-    double MAX_PLAUSIBLE_ANGLE_CHANGE = default(90.0);
+    double MAX_PLAUSIBLE_ANGLE_CHANGE = default(180.0);
     double TOLERANCE_EXCEED_SPEED = default(3.0);
     double TOLERANCE_DEARTH_SPEED = default(5.0);
 
@@ -66,15 +69,15 @@ simple F2MD_CPService like ItsG5Service
     double KALMAN_SPEED_RANGE = default(4.0);
 
     // Vehicle Characteristics
-    double VEHICLE_LENGTH = default(5.0);
-    double VEHICLE_WIDTH = default(3.6);
+    double VEHICLE_LENGTH = default(3.6);
+    double VEHICLE_WIDTH = default(1.8);
 
     // PseudoChange Parameters
     double Period_Change_Time = default(240);
     int Tolerance_Buffer = default(10);
     double Period_Change_Distance = default(80);
     double Random_Change_Chance = default(0.1);
-    bool EnablePC = default(true);
+    bool EnablePC = default(false);
     int PC_TYPE = default(5);
     string pathToMacModule = default(".wlan[*].mac");
 

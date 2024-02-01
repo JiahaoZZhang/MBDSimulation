@@ -15,9 +15,9 @@
 #include "MDCpmAttack.h"
 
 
-// const std::__cxx11::string objID = "Obj";
-// const std::__cxx11::string ghostID = "ghost";
-// int flag_creat_ghost = 0;
+const std::__cxx11::string objID = "Obj";
+const std::__cxx11::string ghostID = "ghost";
+int flag_creat_ghost = 0;
 
 MDCpmAttack::MDCpmAttack() {
 }
@@ -32,38 +32,35 @@ void MDCpmAttack::init(F2MD_CPParameters *params, const traci::VehicleController
     this->mVehicleController = VehController;
     
     this->params = params;
-    this->MaxRadarRange = params->MaxRadarRange;
-    this->MaxMapBoundary = params->MaxMapBoundary;
 
-    ConstDistX = genLib.RandomDouble(0, MaxRadarRange) * 100;
-    ConstDistY = genLib.RandomDouble(0, MaxRadarRange) * 100;
+    ConstRadius = genLib.RandomDouble(5, params->MaxRadius) * 100;
 
-    // ConstSpeedX = genLib.RandomDouble(0, params->RandomSpeed) * 100;
-    // ConstSpeedY = genLib.RandomDouble(0, params->RandomSpeed) * 100;
+    ConstDistX = genLib.RandomDouble(0, params->MaxRadarRange) * 100;
+    ConstDistY = genLib.RandomDouble(0, params->MaxRadarRange) * 100;
+
+    ConstSpeedX = genLib.RandomDouble(0, params->RandomSpeed) * 100;
+    ConstSpeedY = genLib.RandomDouble(0, params->RandomSpeed) * 100;
     ConstSpeed = genLib.RandomDouble(0, params->RandomSpeed) * 100;
 
 
-    ConstDistOffsetX = genLib.RandomDouble((1-params->cpParVar) * params->RandomDistOffsetX * 100,
+    ConstDistOffsetX = genLib.RandomDouble((1-params->cpParVar) * params->RandomDistOffsetX,
             (1+params->cpParVar) * params->RandomDistOffsetX) * 100;
-    ConstDistOffsetY = genLib.RandomDouble((1-params->cpParVar) * params->RandomDistOffsetY * 100,
+    ConstDistOffsetY = genLib.RandomDouble((1-params->cpParVar) * params->RandomDistOffsetY,
             (1+params->cpParVar) * params->RandomDistOffsetY) * 100;
 
-    // ConstSpeedOffsetX = genLib.RandomDouble((1-params->cpParVar) * params->RandomSpeedOffset,
-    //         (1+params->cpParVar) * params->RandomSpeedOffset) * 100;
-    // ConstSpeedOffsetY = genLib.RandomDouble((1-params->cpParVar) * params->RandomSpeedOffset,
-    //         (1+params->cpParVar) * params->RandomSpeedOffset) * 100;
+    ConstSpeedOffsetX = genLib.RandomDouble((1-params->cpParVar) * params->RandomSpeedOffset,
+            (1+params->cpParVar) * params->RandomSpeedOffset) * 100;
+    ConstSpeedOffsetY = genLib.RandomDouble((1-params->cpParVar) * params->RandomSpeedOffset,
+            (1+params->cpParVar) * params->RandomSpeedOffset) * 100;
     ConstSpeedOffset = genLib.RandomDouble((1-params->cpParVar) * params->RandomSpeedOffset,
             (1+params->cpParVar) * params->RandomSpeedOffset) * 100;
 
     maxTimeOfMeasurement = 1500;     //ASN regulation
 
+    mAttackedObjInfoList.clear();
 
 }
 
-/**
- * @brief change the transmission frequency, preserve for the DoS attack
- * @param setBeaconInterval 
- */
 void MDCpmAttack::setBeaconInterval(simtime_t* beaconInterval) {
     this->beaconInterval = beaconInterval;
 }
@@ -74,6 +71,7 @@ void MDCpmAttack::setBeaconInterval(simtime_t* beaconInterval) {
    *  @param  CpmPayload_t* CPM on which the attack must be done.
 */
 void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t* cpm) {
+    mAttackedObjInfoList.clear();
 
     // check each CPM data container
     for(int cpmContainerIndx = 0;  cpmContainerIndx < cpm->cpmContainers.list.count; cpmContainerIndx++){
@@ -138,8 +136,8 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                             //EV_INFO << "Launched Attack : randomDist" << endl;
                             for (int i =0; i < poc->perceivedObjects.list.count; i++) {
                                 PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                po->position.xCoordinate.value = genLib.RandomDouble(-MaxRadarRange * 100, MaxRadarRange * 100);
-                                po->position.yCoordinate.value = genLib.RandomDouble(-MaxRadarRange * 100, MaxRadarRange * 100);
+                                po->position.xCoordinate.value = genLib.RandomDouble(-params->MaxRadarRange * 100, params->MaxRadarRange * 100);
+                                po->position.yCoordinate.value = genLib.RandomDouble(-params->MaxRadarRange * 100, params->MaxRadarRange * 100);
                             }
                         } break;
 
@@ -159,151 +157,50 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                         // The random distance interval is [ -MaxMapBoundary, +MaxMapBoundary], 
                         // Unit: 0.01 m in ASN1 (*100 because we need to change the unit to 1 m)
                         case cpAttackTypes::SingleRandomDist: {
-                            // std::cout << "*****Launched Attack : SingleRandomDist" << std::endl;
-                            if (params->KeepSameID){
-                                bool flagSD = false;
-                                for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                    if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                        PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                        int RandomDistMax = MaxMapBoundary * 100;
-                                        auto xCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
-                                        auto yCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
-                                        if(xCoordinateValue > -131072 && xCoordinateValue < 131072){
-                                            po->position.xCoordinate.value = xCoordinateValue;
-                                        }else if(xCoordinateValue <= -131072){
-                                            po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                        }else if(xCoordinateValue >= 131071){
-                                            po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange; 
-                                        }
-
-                                        if(yCoordinateValue > -131072 && yCoordinateValue < 131072){
-                                            po->position.yCoordinate.value = yCoordinateValue;
-                                        }else if(yCoordinateValue <= -131072){
-                                            po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                        }else if(yCoordinateValue >= 131071){
-                                            po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                        }
-
-                                        flagSD = true;
-                                        break; 
-                                    }
-                                }
-                                if(!flagSD){
-                                    InitSelectedStationID(poc);
-                                    for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                        if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                            PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                            int RandomDistMax = MaxMapBoundary * 100;
-                                            auto xCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
-                                            auto yCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
-                                            if(xCoordinateValue > -131072 && xCoordinateValue < 131072){
-                                                po->position.xCoordinate.value = xCoordinateValue;
-                                            }else if(xCoordinateValue <= -131072){
-                                                po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                            }else if(xCoordinateValue >= 131071){
-                                                po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange; 
-                                            }
-
-                                            if(yCoordinateValue > -131072 && yCoordinateValue < 131072){
-                                                po->position.yCoordinate.value = yCoordinateValue;
-                                            }else if(yCoordinateValue <= -131072){
-                                                po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                            }else if(yCoordinateValue >= 131071){
-                                                po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                            }
-                                            break; 
-                                        }
-                                    }
-                                }
-                            }else{
-                                int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
-                                PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
-                                int RandomDistMax = MaxMapBoundary * 100;
-                                auto xCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
-                                auto yCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
-                                if(xCoordinateValue > -131072 && xCoordinateValue < 131072){
-                                    po->position.xCoordinate.value = xCoordinateValue;
-                                }else if(xCoordinateValue <= -131072){
-                                    po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                }else if(xCoordinateValue >= 131071){
-                                    po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                }
-
-                                if(yCoordinateValue > -131072 && yCoordinateValue < 131072){
-                                    po->position.yCoordinate.value = yCoordinateValue;
-                                }else if(yCoordinateValue <= -131072){
-                                    po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                }else if(yCoordinateValue >= 131071){
-                                    po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                } 
+                            std::cout << "*****Launched Attack : SingleRandomDist" << std::endl;
+                            int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
+                            PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
+                            int RandomDistMax = params->MaxMapBoundary * 100;
+                            auto xCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
+                            auto yCoordinateValue = genLib.RandomInt(-RandomDistMax, RandomDistMax);
+                            if(xCoordinateValue > -131072 && xCoordinateValue < 131072){
+                                po->position.xCoordinate.value = xCoordinateValue;
+                            }else if(xCoordinateValue <= -131072){
+                                po->position.xCoordinate.value = -131072;
+                            }else if(xCoordinateValue >= 131071){
+                                po->position.xCoordinate.value = 131071;
                             }
-                             
+
+                            if(yCoordinateValue > -131072 && yCoordinateValue < 131072){
+                                po->position.yCoordinate.value = yCoordinateValue;
+                            }else if(yCoordinateValue <= -131072){
+                                po->position.yCoordinate.value = -131072;
+                            }else if(yCoordinateValue >= 131071){
+                                po->position.yCoordinate.value = 131071;
+                            }  
 
                         } break;
                         
                         // Random Velocity modification for a perceived object chosen randomly
                         // Attack on a random perceived object (different ID) for each CPM
-                        // The random speed interval is [ -100km/h, 100km/h ] ~= [ -28m/s, +28m/s] by default
+                        // The random speed interval is [ -100km/h, 100km/h ] ~= [ -28m/s, +28m/s]
                         // Unit: 0.01 m/s in ASN1 (*100 because we need to change the unit to 1 m/s)
                         case cpAttackTypes::SingleRandomSpeed: {
                             //EV_INFO << "Launched Attack : SingleRandomSpeed" << endl;
-                            // std::cout << "******Launched Attack : SingleRandomSpeed" << endl;
-                            if (params->KeepSameID){
-                                bool flagSD = false;
-                                for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                    if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                        PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                        int RandomSpeedMax = params->RandomSpeed * 100;
-                                        int genRandomSpeed = genLib.RandomInt(0, RandomSpeedMax);  // random speed magnitude [0, 28m/s]
-                                        if (genRandomSpeed > 16381){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                        }else if(genRandomSpeed > 0 && genRandomSpeed < 16382){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = genRandomSpeed;
-                                        }else if(genRandomSpeed == 0){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                        }else{
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                        }
-                                        flagSD = true;
-                                        break;
-                                    }
-                                }
-                                if(!flagSD){
-                                    InitSelectedStationID(poc);
-                                    for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                    if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                        PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                        int RandomSpeedMax = params->RandomSpeed * 100;
-                                        int genRandomSpeed = genLib.RandomInt(0, RandomSpeedMax);  // random speed magnitude [0, 28m/s]
-                                        if (genRandomSpeed > 16381){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                        }else if(genRandomSpeed > 0 && genRandomSpeed < 16382){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = genRandomSpeed;
-                                        }else if(genRandomSpeed == 0){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                        }else{
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                        }
-                                    }
-                                    break;
-                                  }
-                                }
+                           std::cout << "******Launched Attack : SingleRandomSpeed" << endl;
+                            int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
+                            PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
+                            int RandomSpeedMax = params->RandomSpeed * 100;
+                            int genRandomSpeed = genLib.RandomInt(0, RandomSpeedMax);  // random speed magnitude [0, 28m/s]
+                            if (genRandomSpeed > 16381){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
+                            }else if(genRandomSpeed > 0 && genRandomSpeed < 16382){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = genRandomSpeed;
+                            }else if(genRandomSpeed == 0){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
                             }else{
-                                int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
-                                PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
-                                int RandomSpeedMax = params->RandomSpeed * 100;
-                                int genRandomSpeed = genLib.RandomInt(0, RandomSpeedMax);  // random speed magnitude [0, 28m/s]
-                                if (genRandomSpeed > 16381){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                }else if(genRandomSpeed > 0 && genRandomSpeed < 16382){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = genRandomSpeed;
-                                }else if(genRandomSpeed == 0){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                }else{
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                }
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
                             }
-                            
                             
 
                             // auto& vehicle_api = mVehicleController->getTraCI()->vehicle;
@@ -326,175 +223,92 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                             // }
 
                             // flag_creat_ghost++;
+
+
                         } break;
 
                         // Const XY distance modification for a random perceived object
                         case cpAttackTypes::SingleConstDist: {
-                            // std::cout << "Launched Attack : SingleConstDist" << std::endl;
-                            if (params->KeepSameID){
-                                bool flagSD = false;
-                                for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                    if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                        PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                        po->position.xCoordinate.value = ConstDistX;
-                                        po->position.yCoordinate.value = ConstDistY;
-                                        flagSD = true;
-                                        break;
-                                    }
-                                }
-                                if(!flagSD){
-                                    InitSelectedStationID(poc);
-                                    for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                        if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                            PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                            po->position.xCoordinate.value = ConstDistX;
-                                            po->position.yCoordinate.value = ConstDistY;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }else{
-                                int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
-                                PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
-                                po->position.xCoordinate.value = ConstDistX;
-                                po->position.yCoordinate.value = ConstDistY;
-                            }
-
+                            std::cout << "Launched Attack : SingleConstDist" << std::endl;
+                            int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
+                            PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
+                            po->position.xCoordinate.value = ConstDistX;
+                            po->position.yCoordinate.value = ConstDistY;
                         } break;
                         
                         // Const Velocity modification for a random perceived object
                         // We only consider the attack in polarVelocity format according to the ASN1
                         case cpAttackTypes::SingleConstSpeed: {
-                            // EV_INFO << "Launched Attack : SingleRandomSpeed" << endl;
-                            if(params->KeepSameID){
-                                bool flagSD = false;
-                                for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                    if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                        PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                        if (ConstSpeed > 16381){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                        }else if(ConstSpeed > 0 && ConstSpeed < 16382){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = ConstSpeed;
-                                        }else if(ConstSpeed == 0){
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                        }else{
-                                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                        }
-                                        flagSD = true;
-                                        break;
-                                    }
-                                }
-                                if(!flagSD){
-                                    InitSelectedStationID(poc);
-                                    for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                        if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                            PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                            if (ConstSpeed > 16381){
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                            }else if(ConstSpeed > 0 && ConstSpeed < 16382){
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = ConstSpeed;
-                                            }else if(ConstSpeed == 0){
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                            }else{
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
+                            //EV_INFO << "Launched Attack : SingleRandomSpeed" << endl;
+                            int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
+                            PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
+                            if (ConstSpeed > 16381){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
+                            }else if(ConstSpeed > 0 && ConstSpeed < 16382){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = ConstSpeed;
+                            }else if(ConstSpeed == 0){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
                             }else{
-                                int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
-                                PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
-                                if (ConstSpeed > 16381){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                }else if(ConstSpeed > 0 && ConstSpeed < 16382){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = ConstSpeed;
-                                }else if(ConstSpeed == 0){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                }else{
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                }
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
                             }
-                            
+
                         } break;
 
 
                         // Each attacker injects a constant distance offset for a random perceived object in each CPM
                         case cpAttackTypes::SingleConstDistOffset: {
                             //EV_INFO << "Launched Attack : ConstDistOffset" << endl;
-                            if(params->KeepSameID){
+                             if (params->KeepSameID){
                                 bool flagSD = false;
                                 for(int i=0;i < poc->perceivedObjects.list.count; i++){
                                     if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
                                         PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                        auto SumConstDistOffsetX = po->position.xCoordinate.value + ConstDistOffsetX;
-                                        auto SumConstDistOffsetY = po->position.yCoordinate.value + ConstDistOffsetY;
-                                        if(SumConstDistOffsetX > -131072 && SumConstDistOffsetX < 131072){
-                                            po->position.xCoordinate.value = SumConstDistOffsetX;
-                                        }else if(SumConstDistOffsetX <= -131072){
-                                            po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                        }else if(SumConstDistOffsetX >= 131071){
-                                            po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                        }
+                                        po->position.xCoordinate.value = po->position.xCoordinate.value + ConstDistOffsetX;
+                                        po->position.yCoordinate.value = po->position.yCoordinate.value + ConstDistOffsetY;
+                                        flagSD = true;
 
-                                        if(SumConstDistOffsetY > -131072 && SumConstDistOffsetY < 131072){  
-                                            po->position.yCoordinate.value = SumConstDistOffsetY;
-                                        }else if(SumConstDistOffsetY <= -131072){
-                                            po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                        }else if(SumConstDistOffsetY >= 131071){
-                                            po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                        }
+                                        AttackedObjInfo mAttackedObjInfo;
+                                        mAttackedObjInfo.id = *(po->objectId);
+                                        mAttackedObjInfo.PosX = po->position.xCoordinate.value;
+                                        mAttackedObjInfo.PosY = po->position.yCoordinate.value;
+                                        mAttackedObjInfo.Yaw = po->angles->zAngle.value;
+                                        mAttackedObjInfoList.push_back(mAttackedObjInfo);
+
+                                        break;
                                     }
-                                    flagSD = true;
-                                    break;
                                 }
                                 if(!flagSD){
                                     InitSelectedStationID(poc);
                                     for(int i=0;i < poc->perceivedObjects.list.count; i++){
                                         if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
                                             PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                            auto SumConstDistOffsetX = po->position.xCoordinate.value + ConstDistOffsetX;
-                                            auto SumConstDistOffsetY = po->position.yCoordinate.value + ConstDistOffsetY;
-                                            if(SumConstDistOffsetX > -131072 && SumConstDistOffsetX < 131072){
-                                                po->position.xCoordinate.value = SumConstDistOffsetX;
-                                            }else if(SumConstDistOffsetX <= -131072){
-                                                po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                            }else if(SumConstDistOffsetX >= 131071){
-                                                po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                            }
-
-                                            if(SumConstDistOffsetY > -131072 && SumConstDistOffsetY < 131072){  
-                                                po->position.yCoordinate.value = SumConstDistOffsetY;
-                                            }else if(SumConstDistOffsetY <= -131072){
-                                                po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                            }else if(SumConstDistOffsetY >= 131071){
-                                                po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                            }
-                                            break;
-                                        }                                        
+                                            po->position.xCoordinate.value = po->position.xCoordinate.value + ConstDistOffsetX;
+                                            po->position.yCoordinate.value = po->position.yCoordinate.value + ConstDistOffsetY;
+                                            
+                                            AttackedObjInfo mAttackedObjInfo;
+                                            mAttackedObjInfo.id = *(po->objectId);
+                                            mAttackedObjInfo.PosX = po->position.xCoordinate.value;
+                                            mAttackedObjInfo.PosY = po->position.yCoordinate.value;
+                                            mAttackedObjInfo.Yaw = po->angles->zAngle.value;
+                                            mAttackedObjInfoList.push_back(mAttackedObjInfo);
+                                        }
                                     }
+                                    break;
                                 }
-                            }else{                          
+                            }else{
                                 int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
                                 PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
-                                auto SumConstDistOffsetX = po->position.xCoordinate.value + ConstDistOffsetX;
-                                auto SumConstDistOffsetY = po->position.yCoordinate.value + ConstDistOffsetY;
-                                if(SumConstDistOffsetX > -131072 && SumConstDistOffsetX < 131072){
-                                    po->position.xCoordinate.value = SumConstDistOffsetX;
-                                }else if(SumConstDistOffsetX <= -131072){
-                                    po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                }else if(SumConstDistOffsetX >= 131071){
-                                    po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                }
+                                po->position.xCoordinate.value = po->position.xCoordinate.value + ConstDistOffsetX;
+                                po->position.yCoordinate.value = po->position.yCoordinate.value + ConstDistOffsetY;
 
-                                if(SumConstDistOffsetY > -131072 && SumConstDistOffsetY < 131072){  
-                                    po->position.yCoordinate.value = SumConstDistOffsetY;
-                                }else if(SumConstDistOffsetY <= -131072){
-                                    po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                }else if(SumConstDistOffsetY >= 131071){
-                                    po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                }
+                                AttackedObjInfo mAttackedObjInfo;
+                                mAttackedObjInfo.id = *(po->objectId);
+                                mAttackedObjInfo.PosX = po->position.xCoordinate.value;
+                                mAttackedObjInfo.PosY = po->position.yCoordinate.value;
+                                mAttackedObjInfo.Yaw = po->angles->zAngle.value;
+                                mAttackedObjInfoList.push_back(mAttackedObjInfo);
                             }
+
                         } break;
 
                         // Each attacker injects a constant speed offset for a random perceived object in each CPM
@@ -503,16 +317,7 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                             //EV_INFO << "Launched Attack : ConstSpeedOffset" << endl;
                             int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
                             PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
-                            auto SumConstSpeedOffset = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue + ConstSpeedOffset; // ConstSpeedOffsetX need to correct 
-                            if (SumConstSpeedOffset > 16381){
-                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                            }else if(SumConstSpeedOffset > 0 && SumConstSpeedOffset < 16382){
-                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SumConstSpeedOffset;
-                            }else if(SumConstSpeedOffset == 0){
-                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                            }else{
-                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                            }
+                            po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue + ConstSpeedOffsetX; // ConstSpeedOffsetX need to correct 
                         } break;
 
 
@@ -520,33 +325,24 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                         // add noise to the distance, the noise adapts the Gaussian iid with mean = 0 and sigma = maxRadarRange / 10 
                         case cpAttackTypes::SingleRandomDistOffset: {
                             //EV_INFO << "Launched Attack : RandomDistOffset" << endl;
-                            if(params->KeepSameID){
+                             if (params->KeepSameID){
                                 bool flagSD = false;
                                 for(int i=0;i < poc->perceivedObjects.list.count; i++){
                                     if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
                                         PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                        double  RandDistOffsetX = genLib.GaussianRandomDouble(0, MaxRadarRange/10) * 100;
-                                        double  RandDistOffsetY = genLib.GaussianRandomDouble(0, MaxRadarRange/10) * 100;
-
-                                        auto SumRandDistOffsetX = po->position.xCoordinate.value + int(RandDistOffsetX);
-                                        auto SumRandDistOffsetY = po->position.yCoordinate.value + int(RandDistOffsetY);
-                                        if(SumRandDistOffsetX > -131072 && SumRandDistOffsetX < 131072){
-                                            po->position.xCoordinate.value = SumRandDistOffsetX;
-                                        }else if(SumRandDistOffsetX <= -131072){
-                                            po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                        }else if(SumRandDistOffsetX >= 131071){
-                                            po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange; 
-                                        }
-
-                                        if(SumRandDistOffsetY > -131072 && SumRandDistOffsetY < 131072){  
-                                            po->position.yCoordinate.value = SumRandDistOffsetY;
-                                        }else if(SumRandDistOffsetY <= -131072){
-                                            po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                        }else if(SumRandDistOffsetY >= 131071){
-                                            po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                        }
-
+                                        double  RandDistOffsetX = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+                                        double  RandDistOffsetY = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+                                        po->position.xCoordinate.value = po->position.xCoordinate.value + int(RandDistOffsetX);
+                                        po->position.yCoordinate.value = po->position.yCoordinate.value + int(RandDistOffsetY);
                                         flagSD = true;
+
+                                        AttackedObjInfo mAttackedObjInfo;
+                                        mAttackedObjInfo.id = *(po->objectId);
+                                        mAttackedObjInfo.PosX = po->position.xCoordinate.value;
+                                        mAttackedObjInfo.PosY = po->position.yCoordinate.value;
+                                        mAttackedObjInfo.Yaw = po->angles->zAngle.value;
+                                        mAttackedObjInfoList.push_back(mAttackedObjInfo);
+
                                         break;
                                     }
                                 }
@@ -555,64 +351,154 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                                     for(int i=0;i < poc->perceivedObjects.list.count; i++){
                                         if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
                                             PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                            double  RandDistOffsetX = genLib.GaussianRandomDouble(0, MaxRadarRange/10) * 100;
-                                            double  RandDistOffsetY = genLib.GaussianRandomDouble(0, MaxRadarRange/10) * 100;
-
-                                            auto SumRandDistOffsetX = po->position.xCoordinate.value + int(RandDistOffsetX);
-                                            auto SumRandDistOffsetY = po->position.yCoordinate.value + int(RandDistOffsetY);
-                                            if(SumRandDistOffsetX > -131072 && SumRandDistOffsetX < 131072){
-                                                po->position.xCoordinate.value = SumRandDistOffsetX;
-                                            }else if(SumRandDistOffsetX <= -131072){
-                                                po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                            }else if(SumRandDistOffsetX >= 131071){
-                                                po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange; 
-                                            }
-
-                                            if(SumRandDistOffsetY > -131072 && SumRandDistOffsetY < 131072){  
-                                                po->position.yCoordinate.value = SumRandDistOffsetY;
-                                            }else if(SumRandDistOffsetY <= -131072){
-                                                po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                            }else if(SumRandDistOffsetY >= 131071){
-                                                po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                            }
-                                            break;
+                                            double  RandDistOffsetX = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+                                            double  RandDistOffsetY = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+                                            po->position.xCoordinate.value = po->position.xCoordinate.value + int(RandDistOffsetX);
+                                            po->position.yCoordinate.value = po->position.yCoordinate.value + int(RandDistOffsetY);
+                                            
+                                            AttackedObjInfo mAttackedObjInfo;
+                                            mAttackedObjInfo.id = *(po->objectId);
+                                            mAttackedObjInfo.PosX = po->position.xCoordinate.value;
+                                            mAttackedObjInfo.PosY = po->position.yCoordinate.value;
+                                            mAttackedObjInfo.Yaw = po->angles->zAngle.value;
+                                            mAttackedObjInfoList.push_back(mAttackedObjInfo);
                                         }
-                                    }    
+                                    }
+                                    break;
                                 }
                             }else{
                                 int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
                                 PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
+                                double  RandDistOffsetX = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+                                double  RandDistOffsetY = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
 
-                                double  RandDistOffsetX = genLib.GaussianRandomDouble(0, MaxRadarRange/10) * 100;
-                                double  RandDistOffsetY = genLib.GaussianRandomDouble(0, MaxRadarRange/10) * 100;
+                                po->position.xCoordinate.value = po->position.xCoordinate.value + int(RandDistOffsetX);
+                                po->position.yCoordinate.value = po->position.yCoordinate.value + int(RandDistOffsetY);
 
-                                auto SumRandDistOffsetX = po->position.xCoordinate.value + int(RandDistOffsetX);
-                                auto SumRandDistOffsetY = po->position.yCoordinate.value + int(RandDistOffsetY);
-                                if(SumRandDistOffsetX > -131072 && SumRandDistOffsetX < 131072){
-                                    po->position.xCoordinate.value = SumRandDistOffsetX;
-                                }else if(SumRandDistOffsetX <= -131072){
-                                    po->position.xCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                }else if(SumRandDistOffsetX >= 131071){
-                                    po->position.xCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                }
-
-                                if(SumRandDistOffsetY > -131072 && SumRandDistOffsetY < 131072){  
-                                    po->position.yCoordinate.value = SumRandDistOffsetY;
-                                }else if(SumRandDistOffsetY <= -131072){
-                                    po->position.yCoordinate.value = CartesianCoordinateLarge_negativeOutOfRange;
-                                }else if(SumRandDistOffsetY >= 131071){
-                                    po->position.yCoordinate.value = CartesianCoordinateLarge_positiveOutOfRange;
-                                }
+                                AttackedObjInfo mAttackedObjInfo;
+                                mAttackedObjInfo.id = *(po->objectId);
+                                mAttackedObjInfo.PosX = po->position.xCoordinate.value;
+                                mAttackedObjInfo.PosY = po->position.yCoordinate.value;
+                                mAttackedObjInfo.Yaw = po->angles->zAngle.value;
+                                mAttackedObjInfoList.push_back(mAttackedObjInfo);
                             }
                         } break;
+
                         
+                        // Random distance offset modification for a same ID perceived object
+                        // add noise to the distance, the noise adapts the Gaussian iid with mean = 0 and sigma = maxRadarRange / 10 
+                        case cpAttackTypes::SingleRandomDistOffset_KeepSameID: {
+                            bool flagSD = false;
+                            for(int i=0;i < poc->perceivedObjects.list.count; i++){
+                                if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
+                                    PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
+                                    double  RandDistOffsetX = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+                                    double  RandDistOffsetY = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+
+                                    auto SumRandDistOffsetX = po->position.xCoordinate.value + int(RandDistOffsetX);
+                                    auto SumRandDistOffsetY = po->position.yCoordinate.value + int(RandDistOffsetY);
+                                    if(SumRandDistOffsetX > -131072 && SumRandDistOffsetX < 131072){
+                                        po->position.xCoordinate.value = SumRandDistOffsetX;
+                                    }else if(SumRandDistOffsetX <= -131072){
+                                        po->position.xCoordinate.value = -131072;
+                                    }else if(SumRandDistOffsetX >= 131071){
+                                        po->position.xCoordinate.value = 131071;
+                                    }
+
+                                    if(SumRandDistOffsetY > -131072 && SumRandDistOffsetY < 131072){  
+                                        po->position.yCoordinate.value = SumRandDistOffsetY;
+                                    }else if(SumRandDistOffsetY <= -131072){
+                                        po->position.yCoordinate.value = -131072;
+                                    }else if(SumRandDistOffsetY >= 131071){
+                                        po->position.yCoordinate.value = 131071;
+                                    }
+
+                                    flagSD = true;
+                                    break;
+                                }
+                            }
+                            if(!flagSD){
+                                InitSelectedStationID(poc);
+                                for(int i=0;i < poc->perceivedObjects.list.count; i++){
+                                    if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
+                                        PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
+                                        double  RandDistOffsetX = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+                                        double  RandDistOffsetY = genLib.GaussianRandomDouble(0, params->MaxRadarRange/10) * 100;
+
+                                        auto SumRandDistOffsetX = po->position.xCoordinate.value + int(RandDistOffsetX);
+                                        auto SumRandDistOffsetY = po->position.yCoordinate.value + int(RandDistOffsetY);
+                                        if(SumRandDistOffsetX > -131072 && SumRandDistOffsetX < 131072){
+                                            po->position.xCoordinate.value = SumRandDistOffsetX;
+                                        }else if(SumRandDistOffsetX <= -131072){
+                                            po->position.xCoordinate.value = -131072;
+                                        }else if(SumRandDistOffsetX >= 131071){
+                                            po->position.xCoordinate.value = 131071;
+                                        }
+
+                                        if(SumRandDistOffsetY > -131072 && SumRandDistOffsetY < 131072){  
+                                            po->position.yCoordinate.value = SumRandDistOffsetY;
+                                        }else if(SumRandDistOffsetY <= -131072){
+                                            po->position.yCoordinate.value = -131072;
+                                        }else if(SumRandDistOffsetY >= 131071){
+                                            po->position.yCoordinate.value = 131071;
+                                        }
+                                        break;
+                                    }
+                                }    
+                            }           
+                        } break;
+
+
 
                         //  Random speed offset modification for a random perceived object
                         //  add noise to the velocity, the noise adapts the Gaussian iid with mean = 0 and sigma = real_velocity / 10
                         // We only consider the attack in polarVelocity format according to the ASN1
                         case cpAttackTypes::SingleRandomSpeedOffset: {
-                            if(params->KeepSameID){
-                                bool flagSD = false;
+                            int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
+                            PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
+                            double curSpeed = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue / 100;
+
+                            double RandSpeedOffset = fabs(genLib.GaussianRandomDouble(0, curSpeed) * 100);
+                            auto SumRandSpeedOffset = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue + int(RandSpeedOffset);
+                            if (SumRandSpeedOffset > 16381){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
+                            }else if(SumRandSpeedOffset > 0 && SumRandSpeedOffset < 16382){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SumRandSpeedOffset;
+                            }else if(SumRandSpeedOffset == 0){
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
+                            }else{
+                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
+                            }
+
+                        } break;
+
+
+                        //  Random speed offset modification for a same ID perceived object
+                        //  add noise to the velocity, the noise adapts the Gaussian iid with mean = 0 and sigma = real_velocity / 10
+                        // We only consider the attack in polarVelocity format according to the ASN1
+                        case cpAttackTypes::SingleRandomSpeedOffset_KeepSameID: {
+                            bool flagSD = false;
+                            for(int i=0;i < poc->perceivedObjects.list.count; i++){
+                                if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
+                                    PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
+                                    double curSpeed = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue / 100;
+                                    double RandSpeedOffset = fabs(genLib.GaussianRandomDouble(0, curSpeed) * 100);
+                                    auto SumRandSpeedOffset = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue + int(RandSpeedOffset);
+                                    if (SumRandSpeedOffset > 16381){
+                                        po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
+                                    }else if(SumRandSpeedOffset > 0 && SumRandSpeedOffset < 16382){
+                                        po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SumRandSpeedOffset;
+                                    }else if(SumRandSpeedOffset == 0){
+                                        po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
+                                    }else{
+                                        po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
+                                    }
+                                    flagSD = true;
+                                    break;
+                                }
+                            }
+                            if(!flagSD){
+                                InitSelectedStationID(poc);
                                 for(int i=0;i < poc->perceivedObjects.list.count; i++){
                                     if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
                                         PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
@@ -628,50 +514,13 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                                         }else{
                                             po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
                                         }
-                                        flagSD = true;
                                         break;
                                     }
-                                }
-                                if(!flagSD){
-                                    InitSelectedStationID(poc);
-                                    for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                        if(*poc->perceivedObjects.list.array[i]->objectId == SelectedStationID){
-                                            PerceivedObject_t *po = poc->perceivedObjects.list.array[i];
-                                            double curSpeed = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue / 100;
-                                            double RandSpeedOffset = fabs(genLib.GaussianRandomDouble(0, curSpeed) * 100);
-                                            auto SumRandSpeedOffset = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue + int(RandSpeedOffset);
-                                            if (SumRandSpeedOffset > 16381){
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                            }else if(SumRandSpeedOffset > 0 && SumRandSpeedOffset < 16382){
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SumRandSpeedOffset;
-                                            }else if(SumRandSpeedOffset == 0){
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                            }else{
-                                                po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                            }
-                                            break;
-                                        }
-                                    } 
-                                }
-
-                            }else{
-                                int index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
-                                PerceivedObject_t *po = poc->perceivedObjects.list.array[index];
-                                double curSpeed = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue / 100;
-
-                                double RandSpeedOffset = fabs(genLib.GaussianRandomDouble(0, curSpeed) * 100);
-                                auto SumRandSpeedOffset = po->velocity->choice.polarVelocity.velocityMagnitude.speedValue + int(RandSpeedOffset);
-                                if (SumRandSpeedOffset > 16381){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_outOfRange;
-                                }else if(SumRandSpeedOffset > 0 && SumRandSpeedOffset < 16382){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SumRandSpeedOffset;
-                                }else if(SumRandSpeedOffset == 0){
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_standstill;
-                                }else{
-                                    po->velocity->choice.polarVelocity.velocityMagnitude.speedValue = SpeedValue_unavailable;
-                                }
+                                } 
                             }
                         } break;
+
+
 
                         // Constant distance offset modification for all perceived objects
                         case cpAttackTypes::MultiConstDistOffset: {
@@ -727,13 +576,46 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                         } break;
 
 
-                        // Drop single object: Drop an object randomly chosen from the Perceived Dynamic Object list
-                        // KeepSameID:: dropping the same object as long as it stays in the list  
+                        // Drop single object V1: Drop a perceived object randomly chosen at each CPM
                         case cpAttackTypes::DropObj: {
                             //EV_INFO << "Launched Attack : DropObj" << endl;
-                            if(params->KeepSameID){
-                                // std::cout << "####Launched Attack : DropObj_KeepSameID" << endl;
-                                bool flagSD = false;
+                            std::cout << "####Launched Attack : DropObj" << endl;
+
+                            if(poc->numberOfPerceivedObjects > 1){
+                                int DropObj_index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
+                                poc->numberOfPerceivedObjects--;
+                                asn_sequence_del(&poc->perceivedObjects,DropObj_index,0);
+                            }else if(poc->numberOfPerceivedObjects == 1){       
+                                // if the list existe only one perceiived object, the attacker should delete the whole perception data container
+                                // to adapt the CPM standard
+                                asn_sequence_empty(&poc->perceivedObjects);
+                                poc->numberOfPerceivedObjects--;
+                            }
+                        } break;
+
+
+                        // Drop single object V2: Drop an object randomly chosen from the Perceived Dynamic Object list
+                        // keep dropping the same object as long as it stays in the list  
+                        case cpAttackTypes::DropObj_KeepSameID: {
+                            std::cout << "####Launched Attack : DropObj_KeepSameID" << endl;
+
+                            bool flagSD = false;
+                            for(int i=0;i < poc->perceivedObjects.list.count; i++){
+                                const int ObjStationID = *poc->perceivedObjects.list.array[i]->objectId;
+                                if(ObjStationID == SelectedStationID){
+                                    if(poc->perceivedObjects.list.count > 1){
+                                        asn_sequence_del(&poc->perceivedObjects, i, 0);
+                                        poc->numberOfPerceivedObjects--;
+                                    }else{
+                                        asn_sequence_empty(&poc->perceivedObjects);
+                                        poc->numberOfPerceivedObjects--;
+                                    }
+                                    flagSD = true;
+                                    break;
+                                }
+                            }
+                            if(!flagSD){
+                                InitSelectedStationID(poc);
                                 for(int i=0;i < poc->perceivedObjects.list.count; i++){
                                     const int ObjStationID = *poc->perceivedObjects.list.array[i]->objectId;
                                     if(ObjStationID == SelectedStationID){
@@ -744,45 +626,16 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                                             asn_sequence_empty(&poc->perceivedObjects);
                                             poc->numberOfPerceivedObjects--;
                                         }
-                                        flagSD = true;
                                         break;
                                     }
                                 }
-                                if(!flagSD){
-                                    InitSelectedStationID(poc);
-                                    for(int i=0;i < poc->perceivedObjects.list.count; i++){
-                                        const int ObjStationID = *poc->perceivedObjects.list.array[i]->objectId;
-                                        if(ObjStationID == SelectedStationID){
-                                            if(poc->perceivedObjects.list.count > 1){
-                                                asn_sequence_del(&poc->perceivedObjects, i, 0);
-                                                poc->numberOfPerceivedObjects--;
-                                            }else{
-                                                asn_sequence_empty(&poc->perceivedObjects);
-                                                poc->numberOfPerceivedObjects--;
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-                            }else{
-                                // std::cout << "####Launched Attack : DropObj" << endl;
-                                if(poc->numberOfPerceivedObjects > 1){
-                                    int DropObj_index = genLib.RandomInt(0, poc->perceivedObjects.list.count-1);
-                                    poc->numberOfPerceivedObjects--;
-                                    asn_sequence_del(&poc->perceivedObjects,DropObj_index,0);
-                                }else if(poc->numberOfPerceivedObjects == 1){       
-                                    // if the list existe only one perceiived object, the attacker should delete the whole perception data container
-                                    // to adapt the CPM standard
-                                    asn_sequence_empty(&poc->perceivedObjects);
-                                    poc->numberOfPerceivedObjects--;
-                                }
                             }
-                        } break;
+                        }break;
 
                         // Drop all perceived objects
                         case cpAttackTypes::DropAllObj: {
                             //EV_INFO << "####Launched Attack : DropAllObj" << endl;
-                            // std::cout << "####Launched Attack : DropAllObj" << endl;
+                            std::cout << "####Launched Attack : DropAllObj" << endl;
 
                             asn_sequence_empty(&poc->perceivedObjects);
                             poc->numberOfPerceivedObjects = 0;
@@ -799,11 +652,20 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                             *(object->objectId) = GhostID;
                             object->measurementDeltaTime = genLib.RandomInt(0,maxTimeOfMeasurement);
 
-                            object->position.xCoordinate.value = 3000 + genLib.RandomInt(-200, 200);
+                            auto ConstRadiusX = sin(angle_cast(mVehicleController->getHeading()).degree /180 * PI)* ConstRadius;
+                            auto ConstRadiusY = cos(angle_cast(mVehicleController->getHeading()).degree /180 * PI)* ConstRadius;
+
+                            object->position.xCoordinate.value = ConstRadiusX;
                             object->position.xCoordinate.confidence = CoordinateConfidence_unavailable;
                             
-                            object->position.yCoordinate.value = 0;
+                            object->position.yCoordinate.value = ConstRadiusY;
                             object->position.yCoordinate.confidence = CoordinateConfidence_unavailable;
+
+                            // cout << "artery heading::" << mVehicleController->getHeading().degree() << endl;
+                            // cout << "heading::" << angle_cast(mVehicleController->getHeading()).degree << endl;
+                            // cout << "ConstRadiusX::" << ConstRadiusX << endl;
+                            // cout << "ConstRadiusY::" << ConstRadiusY << endl; 
+                            // cout << "ConstRadius::" << ConstRadius << endl; 
 
                             object->velocity = vanetza::asn1::allocate<Velocity3dWithConfidence_t>();
                             object->velocity->present = Velocity3dWithConfidence_PR_polarVelocity;
@@ -829,6 +691,15 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                             object->angles->zAngle.confidence = AngleConfidence_unavailable;
                             ASN_SEQUENCE_ADD(&poc->perceivedObjects,object);
                             poc->numberOfPerceivedObjects++;
+
+
+                            AttackedObjInfo mAttackedObjInfo;
+                            mAttackedObjInfo.id = *(object->objectId);
+                            mAttackedObjInfo.PosX = ConstRadiusX;
+                            mAttackedObjInfo.PosY = ConstRadiusY;
+                            mAttackedObjInfo.Yaw = object->angles->zAngle.value;
+                            mAttackedObjInfoList.push_back(mAttackedObjInfo);
+
                         } break;
                     }
                 }else{
@@ -840,11 +711,20 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                             *(object->objectId) = GhostID;
                             object->measurementDeltaTime = genLib.RandomInt(0,maxTimeOfMeasurement);
 
-                            object->position.xCoordinate.value = 3000 + genLib.RandomInt(-200, 200);
+                            auto ConstRadiusX = sin(angle_cast(mVehicleController->getHeading()).degree /180 * PI) * ConstRadius;
+                            auto ConstRadiusY = cos(angle_cast(mVehicleController->getHeading()).degree /180 * PI) * ConstRadius;
+
+                            object->position.xCoordinate.value = ConstRadiusX;
                             object->position.xCoordinate.confidence = CoordinateConfidence_unavailable;
                             
-                            object->position.yCoordinate.value = 0;
+                            object->position.yCoordinate.value = ConstRadiusY;
                             object->position.yCoordinate.confidence = CoordinateConfidence_unavailable;
+
+                            // cout << "artery heading::" << mVehicleController->getHeading().degree() << endl;
+                            // cout << "heading::" << angle_cast(mVehicleController->getHeading()).degree << endl;
+                            // cout << "ConstRadiusX::" << ConstRadiusX << endl;
+                            // cout << "ConstRadiusY::" << ConstRadiusY << endl; 
+                            // cout << "ConstRadius::" << ConstRadius << endl; 
 
                             object->velocity = vanetza::asn1::allocate<Velocity3dWithConfidence_t>();
                             object->velocity->present = Velocity3dWithConfidence_PR_polarVelocity;
@@ -870,7 +750,15 @@ void MDCpmAttack::launchAttack(cpAttackTypes::Attacks myAttackType, CpmPayload_t
                             object->angles->zAngle.confidence = AngleConfidence_unavailable;
 
                             ASN_SEQUENCE_ADD(&poc->perceivedObjects,object);
-                            poc->numberOfPerceivedObjects++;       
+                            poc->numberOfPerceivedObjects++;   
+
+                            AttackedObjInfo mAttackedObjInfo;
+                            mAttackedObjInfo.id = *(object->objectId);
+                            mAttackedObjInfo.PosX = ConstRadiusX;
+                            mAttackedObjInfo.PosY = ConstRadiusY;
+                            mAttackedObjInfo.Yaw = object->angles->zAngle.value;
+                            mAttackedObjInfoList.push_back(mAttackedObjInfo);
+
                         }break;
                     }
 

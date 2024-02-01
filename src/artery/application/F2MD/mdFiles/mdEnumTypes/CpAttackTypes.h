@@ -20,6 +20,7 @@ enum Attacks {
     Genuine = 0,
 	DropObj,
     DropAllObj,
+    DropObj_KeepSameID,
     AddObj,
 	SingleRandomDist,
     SingleRandomSpeed,
@@ -37,25 +38,28 @@ enum Attacks {
     MultiRandomSpeedOffset,
     SingleConstDist,
     SingleConstSpeed,
+    SingleRandomDistOffset_KeepSameID,
+    SingleRandomSpeedOffset_KeepSameID,
     SIZE_OF_ENUM
 };
 
-static const char* AttackNames[] = { "Genuine", "DropObj", "DropAllObj",
+static const char* AttackNames[] = { "Genuine", "DropObj", "DropAllObj","DropObj_KeepSameID",
         "AddObj", "SingleRandomDist", "SingleRandomSpeed", "MultiConstDist", 
 		"MultiConstSpeed", "MultiRandomDist", "MultiRandomSpeed", "SingleConstDistOffset",
         "SingleConstSpeedOffset", "SingleRandomDistOffset", "SingleRandomSpeedOffset", 
 		"MultiConstDistOffset", "MultiConstSpeedOffset", "MultiRandomDistOffset", 
-		"MultiRandomSpeedOffset","SingleConstDist","SingleConstSpeed"};
+		"MultiRandomSpeedOffset","SingleConstDist","SingleConstSpeed","SingleRandomDistOffset_KeepSameID","SingleRandomSpeedOffset_KeepSameID"};
 
 static_assert(sizeof(cpAttackTypes::AttackNames)/sizeof(char*) == cpAttackTypes::SIZE_OF_ENUM
         , "sizes dont match");
 
 static const cpAttackTypes::Attacks intAttacks[] = { Genuine, DropObj, 
-		DropAllObj, AddObj, SingleRandomDist, SingleRandomSpeed, MultiConstDist,
+		DropAllObj, DropObj_KeepSameID, AddObj, SingleRandomDist, SingleRandomSpeed, MultiConstDist,
         MultiConstSpeed, MultiRandomDist, MultiRandomSpeed, SingleConstDistOffset,
         SingleConstSpeedOffset, SingleRandomDistOffset, SingleRandomSpeedOffset, 
 		MultiConstDistOffset, MultiConstSpeedOffset, MultiRandomDistOffset, 
-		MultiRandomSpeedOffset, SingleConstDist, SingleConstSpeed};
+		MultiRandomSpeedOffset, SingleConstDist, SingleConstSpeed, SingleRandomDistOffset_KeepSameID,
+        SingleRandomSpeedOffset_KeepSameID};
 
 static_assert(sizeof(cpAttackTypes::intAttacks)/sizeof(cpAttackTypes::Attacks) == cpAttackTypes::SIZE_OF_ENUM
         , "sizes dont match");

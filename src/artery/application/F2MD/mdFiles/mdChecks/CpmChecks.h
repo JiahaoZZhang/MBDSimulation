@@ -84,11 +84,11 @@ private:
     double KalmanPositionConsistency(double curXPosition, double curYPosition, double oldXPosition, double oldYPosition,
                                     double curXPostionConfidence, double curYPostionConfidence, double time, Kalman_SI* kalmanSI);
 
-    double KalmanSpeedConsistancy(double curSpeed, double curAccel, double curSpeedDirection, double curSpeedConfidence,
-                                                double oldSpeedDirection, double time, Kalman_SI* kalmanSI);
+    double KalmanSpeedConsistancy(double curSpeed, double curAccel, double curSpeedDirection,
+                                        double curSpeedConfidence, double time, Kalman_SI* kalmanSI);
 
     void KalmanPositionSpeedConsistancy(double curXPosition, double curYPosition, double curXPositionConfidence, double curYPositionConfidence, 
-                                                double curSpeed, double curAccel, double curSpeedConfidence, double curSpeedDirection, double oldSpeedDirection,
+                                                double curSpeed, double curAccel, double curSpeedConfidence, double curSpeedDirection, 
                                                 double time, Kalman_SVI* kalmanSVI, double retVal[]);
 
 

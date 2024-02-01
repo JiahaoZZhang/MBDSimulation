@@ -64,6 +64,9 @@ class VehicleDataProvider
 		StationType getStationType() const;
 
 		void setStationId(uint32_t id);
+
+		std::__cxx11::string sumo_id() const { return mVehicleKinematics.sumo_id;}
+
 		uint32_t getStationId() const { return mStationId; }
 		uint32_t station_id() const { return mStationId; } /*< deprecated, use getStationId */
 
