@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<regions>
+    <!-- define regions of interest (RoI) here.
+    Only vehicles entering a RoI will be equipped with a middelware.
+    When leaving the RoI the middlewares are removed again.
+    Leave regions empty to consider the whole scenario as RoI.
+    -->
+    <polygon name="VeReMi_Origin">
+        <point x="2300" y="5400" />
+        <point x="6300" y="5400" />
+        <point x="6300" y="6300" />
+        <point x="2300" y="6300" />
+    </polygon>
+
+    <!-- <polygon name="VeReMi_Origin">
+        <point x="2300" y="5400" />
+        <point x="6300" y="5400" />
+        <point x="6300" y="6300" />
+        <point x="2300" y="6300" />
+    </polygon>
+
+    <polygon name="VeReMi_Origin">
+        <point x="2300" y="5400" />
+        <point x="6300" y="5400" />
+        <point x="6300" y="6300" />
+        <point x="2300" y="6300" />
+    </polygon> -->
+
+</regions>

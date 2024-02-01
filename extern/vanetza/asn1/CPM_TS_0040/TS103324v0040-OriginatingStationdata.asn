@@ -1,0 +1,100 @@
+CPM-OriginatingStationData-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) originatingStationData (3) version1 (1)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+/** @brief Include ETSI TS 102 894-2
+Include references from @url https://forge.etsi.org/rep/ITS/ITS_ASN1/blob/master/CDD_TS102894-2/ITS-Container.asn
+*/
+DriveDirection, Heading, LateralAcceleration, LongitudinalAcceleration, Speed, VehicleLength,
+VehicleWidth, VerticalAcceleration, YawRate
+FROM ITS-Container {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (102894) cdd (2) version (2)}
+
+/** @brief Include ISO 19091
+Include references from @url https://standards.iso.org/iso/ts/19091/ed-2/en/ISO-TS-19091-addgrp-C-2018.asn
+*/
+IntersectionReferenceID, RoadSegmentReferenceID
+FROM DSRC {iso (1) standard (0) signalizedIntersection (19091) profilec(2) dsrc (2) version2 (2)}
+
+CartesianAngle, SpeedExtended, TrailerDataContainer, VehicleHeight, WGS84Angle
+FROM CPM-CommonDataTypes-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) commonDataTypes (2) version1 (1)};
+
+/** @brief Originating Vehicle Container
+The _originatingVehicleContainer_ provides detailed information about the vehicle ITS-S
+disseminating the CPM.
+*/
+OriginatingVehicleContainer ::= SEQUENCE {
+    /** @details heading
+    Heading and heading accuracy of the vehicle movement of the originating ITS-S with regards to
+    the true north. The heading accuracy provided in the DE @see headingConfidence value shall
+    provide the accuracy of the measured vehicle heading with a confidence level of 95 %.
+    */
+    heading                     Heading,
+    /** @details speed
+    Driving speed and speed accuracy of the originating ITS-S. The speed accuracy provided in the
+    DE speedConfidence shall provide the accuracy of the speed value with a confidence level of 95 %.
+    */
+    speed                       Speed,
+    /** @details verticalSpeed 
+    Vertical speed and speed accuracy of the originating ITS-S. The speed accuracy provided in the
+    DE speedConfidence shall provide the accuracy of the speed value with a confidence level of 95 %.
+    Vertical means perpendicular to the ground plane of the WGS84 coordinate system at the current
+    position of the originating ITS-S.
+    */
+    verticalSpeed               SpeedExtended OPTIONAL,
+
+    /** @details vehicleOrientationAngle
+    Angle and angle accuracy of the absolute orientation of the disseminating vehicle in the
+    WGS84 coordinate system with respect to true North. This is opposed to the vehicle heading
+    which is calculated taking into account the speed vector. The confidence denotes the accuracy
+    of the measured angle value for a confidence level of 95 %.
+    */
+    vehicleOrientationAngle     WGS84Angle OPTIONAL,
+    driveDirection              DriveDirection DEFAULT forward,
+    longitudinalAcceleration    LongitudinalAcceleration OPTIONAL,
+    lateralAcceleration         LateralAcceleration OPTIONAL,
+    verticalAcceleration        VerticalAcceleration OPTIONAL,
+    yawRate                     YawRate OPTIONAL,
+    /** @details pitchAngle
+    Angle and angle accuracy between the ground plane and the current orientation of a vehicle's
+    x-axis with respect to the ground plane about the y-axis according to the ISO 8855.
+    */pitchAngle                  CartesianAngle OPTIONAL,
+
+    /** @details rollAngle
+    Angle and angle accuracy between the ground plane and the current orientation of a vehicle's
+    y-axis with respect to the ground plane about the x-axis according to the ISO 8855
+    */
+    rollAngle                   CartesianAngle OPTIONAL,
+    vehicleLength               VehicleLength OPTIONAL,
+    vehicleWidth                VehicleWidth OPTIONAL,
+    vehicleHeight               VehicleHeight OPTIONAL,
+    /** @details trailerDataContainer
+    Provides detailed information about the trailers dimensions and orientation in case a trailer is present.
+    */
+    trailerDataContainer        TrailerDataContainer OPTIONAL,
+    ...
+}
+
+/** @brief Originating RSU Container
+The _originatingRSUContainer_ provides information about the RSU type ITS-S disseminating the CPM.
+*/
+OriginatingRSUContainer ::= CHOICE {
+    /** @details intersectionReferenceId
+    Conveys the combination of an optional RoadRegulatorID and of an IntersectionID that is
+    unique within that region. When the RoadRegulatorID is present, the IntersectionReferenceID
+    is guaranteed to be globally unique.
+    */
+    intersectionReferenceId     IntersectionReferenceID,
+    /** @details roadSegmentReferenceId
+    Conveys the RoadSegmentReferenceID which is unique to a given road segment of interest, and
+    also the RoadRegulatorID assigned to the region in which it is operating
+    */
+    roadSegmentReferenceId      RoadSegmentReferenceID,
+    ...
+}
+
+END

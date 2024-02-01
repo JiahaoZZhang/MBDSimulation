@@ -1,0 +1,63 @@
+<flows>
+    <vType id="Bus" accel="2.8" decel="4.5" sigma="0.5" length="6" minGap="3" maxSpeed="25" guiShape="bus"/>
+
+    <flow id="BusFlowWestEast0" from="-240120122" to="--1356" begin="0" end="900" number="6" type="Bus"/>
+    <flow id="BusFlowEastWest0" from="-1356" to="240120122" begin="0" end="900" number="4" type="Bus"/>
+    <flow id="BusFlowNorthSouth0" from="28925528" to="239331353" begin="0" end="900" number="1" type="Bus"/>
+    <flow id="BusFlowSouthNorth0" from="239331354" to="105490284" begin="0" end="900" number="1" type="Bus"/>
+
+  
+   <flow id="BusFlowWestEast" from="-240120122" to="--1356" begin="900" end="1800" number="6" type="Bus"/>
+    <flow id="BusFlowEastWest" from="-1356" to="240120122" begin="900" end="1800" number="8" type="Bus"/>
+    <flow id="BusFlowEastSouth" from="-1356" to="239331353"  begin="900" end="1800" number="1" type="Bus"/>
+    <flow id="BusFlowNorthSouth" from="28925528" to="239331353" begin="900" end="1800" number="1" type="Bus"/>
+    <flow id="BusFlowSouthNorth" from="239331354" to="105490284" begin="900" end="1800" number="2" type="Bus"/>
+
+
+    <flow id="BusFlowWestEast1" from="-240120122" to="--1356" begin="1800" end="2700" number="4" type="Bus"/>
+    <flow id="BusFlowEastWest1" from="-1356" to="240120122" begin="1800" end="2700" number="7" type="Bus"/>
+    <flow id="BusFlowNorthSouth1" from="28925528" to="239331353" begin="1800" end="2700" number="1" type="Bus"/>
+    <flow id="BusFlowSouthNorth1" from="239331354" to="105490284" begin="1800" end="2700" number="2" type="Bus"/>
+
+
+    <flow id="BusFlowWestEast2" from="-240120122" to="--1356" begin="2700" end="3600" number="6" type="Bus"/>
+    <flow id="BusFlowEastWest2" from="-1356" to="240120122" begin="2700" end="3600" number="5" type="Bus"/>
+    <flow id="BusFlowNorthEast2" from="105490284" to="--1356" begin="2700" end="3600" number="1" type="Bus"/>
+    <flow id="BusFlowNorthSouth2" from="28925528" to="239331353" begin="2700" end="3600" number="1" type="Bus"/>
+    <flow id="BusFlowSouthNorth2" from="239331354" to="105490284" begin="2700" end="3600" number="2" type="Bus"/>
+
+
+    <flow id="BusFlowWestEast3" from="-240120122" to="--1356" begin="3600" end="4500" number="4" type="Bus"/>
+    <flow id="BusFlowEastWest3" from="-1356" to="240120122" begin="3600" end="4500" number="5" type="Bus"/>
+    <flow id="BusFlowNorthSouth3" from="28925528" to="239331353" begin="3600" end="4500" number="2" type="Bus"/>
+    <flow id="BusFlowSouthNorth3" from="239331354" to="105490284" begin="3600" end="4500" number="2" type="Bus"/>
+
+
+    <flow id="BusFlowWestEast4" from="-240120122" to="--1356" begin="4500" end="5400" number="4" type="Bus"/>
+    <flow id="BusFlowEastWest4" from="-1356" to="240120122" begin="4500" end="5400" number="5" type="Bus"/>
+    <flow id="BusFlowSouthWest4" from="239331354" to="240120122" begin="4500" end="5400" number="1" type="Bus"/>
+    <flow id="BusFlowNorthSouth4" from="28925528" to="239331353" begin="4500" end="5400" number="1" type="Bus"/>
+    <flow id="BusFlowSouthNorth4" from="239331354" to="105490284" begin="4500" end="5400" number="2" type="Bus"/>
+
+
+
+    <flow id="BusFlowWestEast5" from="-240120122" to="--1356" begin="5400" end="6300" number="5" type="Bus"/>
+    <flow id="BusFlowEastWest5" from="-1356" to="240120122" begin="5400" end="6300" number="5" type="Bus"/>
+    <flow id="BusFlowNorthSouth5" from="28925528" to="239331353" begin="5400" end="6300" number="2" type="Bus"/>
+    <flow id="BusFlowSouthNorth5" from="239331354" to="105490284" begin="5400" end="6300" number="2" type="Bus"/>
+
+
+
+    <flow id="BusFlowWestEast6" from="-240120122" to="--1356" begin="6300" end="7200" number="7" type="Bus"/>
+    <flow id="BusFlowEastWest6" from="-1356" to="240120122" begin="6300" end="7200" number="8" type="Bus"/>
+    <flow id="BusFlowSouthEast6" from="239331354" to="--1356" begin="6300" end="7200" number="1" type="Bus"/>
+    <flow id="BusFlowNorthSouth6" from="28925528" to="239331353" begin="6300" end="7200" number="1" type="Bus"/>
+    <flow id="BusFlowSouthNorth6" from="239331354" to="105490284" begin="6300" end="7200" number="1" type="Bus"/>
+
+
+  
+
+
+</flows>
+
+

@@ -1,0 +1,16 @@
+Loading net-file from '/home/jiahao/f2md_on_artery/scenarios/LuSTMiniScenario/lust.net.xml' ... done (124ms).
+Loading additional-files from '/home/jiahao/f2md_on_artery/scenarios/LuSTMiniScenario/vtypes.add.xml' ... done (1ms).
+Loading additional-files from '/home/jiahao/f2md_on_artery/scenarios/LuSTMiniScenario/lust.add.xml' ... done (21ms).
+Loading additional-files from '/home/jiahao/f2md_on_artery/scenarios/LuSTMiniScenario/lust.poly.xml' ... done (69ms).
+Loading done.
+Simulation started with time: 0.00.
+Simulation ended at time: 9834.60
+Performance: 
+ Duration: 9.57s
+ Real time factor: 1027.43
+ UPS: 91775.386544
+Vehicles: 
+ Inserted: 476 (Loaded: 480)
+ Running: 3
+ Waiting: 0
+

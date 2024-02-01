@@ -1,0 +1,119 @@
+CPM-SensorInformation-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) sensorInformation (4) version1 (1)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+AreaCircular, AreaEllipse, AreaRectangle, AreaPolygon, AreaRadial, CartesianAngleValue, FreeSpaceConfidence,
+Identifier, Range, RefPointId, SensorType, XSensorOffset, YSensorOffset, ZSensorOffset
+FROM CPM-CommonDataTypes-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) commonDataTypes (2) version1 (1)};
+
+/** @brief Sensor Information Container
+This container contains a list of sensor-types or data fusion systems from which the station
+provides information about detected objects.
+*/
+SensorInformationContainer ::= SEQUENCE SIZE(1..128, ...) OF SensorInformation
+
+SensorInformation ::= SEQUENCE {
+    /** @details sensorID
+    Sensor pseudonym ID used to relate which measurement has been received by which sensor.
+    This ID is referred to in the @see PerceivedObject.
+    */
+    sensorID          		Identifier,
+    type        		    SensorType,
+    detectionArea		    DetectionArea,
+    /** @details freeSpaceConfidence
+    Describes the isotropic free space confidence that can be assumed for the entire detection
+    area of this sensor. Shadowed areas can be derived from provided objects. Deviations from
+    this free space derivation can be expressed in the @see FreeSpaceAddendumContainer.
+	*/
+    freeSpaceConfidence		FreeSpaceConfidence OPTIONAL,
+   ...
+}
+
+/** @brief Detection Area
+Choice of DFs to detail the sensor information.
+*/
+DetectionArea ::= CHOICE {
+    /** @details vehicleSensor
+    The _vehicleSensor_ shall be used for describing non-stationary sensors attached to vehicles.
+    */
+    vehicleSensor               VehicleSensor,
+    /** @details stationarySensorRadial
+    The _stationarySensorRadial_ can be used to provide details for describing sensors mounted to
+    road-side units
+    */
+    stationarySensorRadial      AreaRadial,
+    /** @details stationarySensorPolygon
+    The _stationarySensorPolygon_ can be used to describe a polygonal detection area associated
+    to a single sensor or to describe the union of multiple polygonal areas expressed as one
+    combined polygon.
+    */
+    stationarySensorPolygon     AreaPolygon,
+    /** @details stationarySensorCircular
+    The _stationarySensorCircular_ describes a circular perception area for a stationary sensor.
+    The position offset refers to the center point of the circular area.
+    */
+    stationarySensorCircular    AreaCircular,
+    /** @details stationarySensorEllipse
+    The _stationarySensorEllipse_ describes an ellipse-shaped perception area for a stationary
+    sensor.The position offset refers to the center point of the ellipse.
+    */
+    stationarySensorEllipse     AreaEllipse,
+    /** @details stationarySensorRectangle
+    The _stationarySensorRectangle_ describes a rectangle as a perception area for a stationary
+    sensor. The position offset refers to the center point of the rectangle.
+    */
+    stationarySensorRectangle   AreaRectangle,
+    ...
+}
+
+/** @brief Vehicle Sensor
+Describes the perception capabilities of mobile sensors mounted to vehicles.
+*/
+VehicleSensor ::= SEQUENCE {
+    /** @details refPointId
+    An identification of the reference point in case of a sensor mounted to trailer.
+    Defaults to ITS ReferencePoint (0).
+    */
+    refPointId                      RefPointId DEFAULT 0,
+    /** @details xSensorOffset
+    Mounting position of sensor in negative x-direction from Reference Point indicated by the @see refPointId.
+    */
+    xSensorOffset                   XSensorOffset,
+    /** @details ySensorOffset
+    Mounting position of sensor in y-direction from Reference Point indicated by the @see refPointId.
+    */
+    ySensorOffset                   YSensorOffset,
+    /** @details zSensorOffset
+    Mounting position of sensor in z-direction from Reference Point indicated by the @see refPointId.
+    */
+    zSensorOffset                   ZSensorOffset OPTIONAL,
+    /** @details vehicleSensorPropertyList
+    The actual extension of the area covered by the specific vehicle sensor. In case of multiple
+    perception areas for a sensor, a list of areas covered by this sensor can be added.
+    */
+    vehicleSensorPropertyList       VehicleSensorPropertyList,
+    ...
+}
+
+--! @brief Vehicle Sensor Property List
+VehicleSensorPropertyList ::= SEQUENCE SIZE(1..10) OF VehicleSensorProperties
+
+/** @brief Vehicle Sensor Properties
+The actual extension of the area covered by the specific vehicle sensor. In case of multiple
+perception areas for a sensor, a list of areas covered by this sensor can be added.
+*/
+VehicleSensorProperties ::= SEQUENCE {
+    range                           Range,
+    horizontalOpeningAngleStart     CartesianAngleValue,
+    horizontalOpeningAngleEnd       CartesianAngleValue,
+    verticalOpeningAngleStart       CartesianAngleValue OPTIONAL,
+    verticalOpeningAngleEnd         CartesianAngleValue OPTIONAL,
+    ...
+}
+
+END

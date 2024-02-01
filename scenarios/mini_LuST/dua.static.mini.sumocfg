@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Luxembourg SUMO Traffic (LuST) Scenario
+This project is licensed under the terms of the MIT license.
+Author: Lara CODECA [codeca@gmail.com]
+-->
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo-sim.org/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="mini_lust.net.xml"/>
+        <route-files value="DUARoutesMini/minilocal.0.rou.xml,DUARoutesMini/minilocal.1.rou.xml,DUARoutesMini/minilocal.2.rou.xml"/>
+        <additional-files value="vtypes.add.xml,mini_lust.poly.xml" />
+    </input>
+
+    <output>
+        <summary-output value="dua.static.mini.summary.xml" />
+        <!-- <fcd-output value="dua.static.mini.fcd.xml" /> -->
+        <edgedata-output value="edgedata.xml"/>
+    </output>
+
+    <time>
+        <!-- <begin value="28800"/>
+        <end value="28900"/> -->
+        <step-length value="1"/>
+    </time>
+
+    <processing>
+        <ignore-junction-blocker value="20"/>
+        <time-to-teleport value="600"/>
+        <max-depart-delay value="600"/>
+        <routing-algorithm value="dijkstra"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.probability value="0.70"/>
+        <device.rerouting.period value="300"/>
+        <device.rerouting.pre-period value="300"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <log value="dua.static.mini.log"/>
+        <no-warnings value="true" />
+    </report>
+
+</configuration>

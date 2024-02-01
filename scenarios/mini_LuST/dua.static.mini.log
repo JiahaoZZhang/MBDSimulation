@@ -1,0 +1,18 @@
+Loading net-file from 'mini_lust.net.xml' ... done (48ms).
+Loading additional-files from 'vtypes.add.xml' ... done (1ms).
+Loading additional-files from 'mini_lust.poly.xml' ... done (72ms).
+Loading done.
+Simulation version 1.15.0 started with time: 0.00.
+Simulation ended at time: 87018.00
+Reason: All vehicles have left the simulation.
+Performance: 
+ Duration: 51.07s
+ Real time factor: 1704.06
+ UPS: 142382.943308
+Vehicles: 
+ Inserted: 69688 (Loaded: 71637)
+ Running: 0
+ Waiting: 0
+
+DijkstraRouter answered 55613 queries and explored 41.82 edges on average.
+DijkstraRouter spent 0.71s answering queries (0.01ms on average).

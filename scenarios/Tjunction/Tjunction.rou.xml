@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2021-12-08 13:41:07 by Eclipse SUMO duarouter Version v1_10_0+1788-4a48687524d
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
+
+    <input>
+        <net-file value="Tjunction.net.xml"/>
+        <route-files value="Tjunction.trips.xml"/>
+    </input>
+
+    <output>
+        <output-file value="Tjunction.rou.xml"/>
+        <alternatives-output value="Tjunction.rou.alt.xml"/>
+    </output>
+
+    <report>
+        <ignore-errors value="true"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="ego" accel="2.6" decel="4.5" sigma="0.5" length="5" jmTimegapMinor="0" maxSpeed="11"/>
+    <vType id="RemoteCar" accel="2.6" decel="4.5" sigma="0.5" length="5" maxSpeed="11"/>
+    <vType id="attacker" accel="2.6" decel="4.5" sigma="0.5" length="5" maxSpeed="11"/>
+    <vType id="object" accel="2.6" decel="4.5" sigma="0.5" length="5" jmTimegapMinor="0" maxSpeed="11"/>
+    
+    <vehicle id="ego_1" depart="3.00" departLane="0" arrivalLane="0" type="ego" >
+        <route edges="e24 e41"/>
+        <param key="junctionModel.ignoreIDs" value="Obj"/>
+    </vehicle>
+        
+    <vehicle id="Obj" depart="3.00" departLane="0" arrivalLane="0" type="object" >
+        <route edges="e34 e41"/>
+        <param key="junctionModel.ignoreIDs" value="ego_1"/>
+    </vehicle>
+
+    <vehicle id="RemoteCar_1" depart="5.00" departLane="0" arrivalLane="0" type="RemoteCar">
+    	<route edges="e14 e43"/>
+    </vehicle>
+
+    <vehicle id="RemoteCar_2" depart="5.00" departLane="1" arrivalLane="1" type="RemoteCar" >
+        <route edges="e34 e41"/>
+    </vehicle> 
+
+    <vehicle id="RemoteCar_3" depart="6.00" departLane="1" arrivalLane="1" type="RemoteCar">
+    	<route edges="e34 e41"/>
+    </vehicle>
+
+    <vehicle id="RemoteCar_4" depart="8.00" departLane="1" arrivalLane="1" type="RemoteCar">
+    	<route edges="e34 e41"/>
+    </vehicle>
+
+    <vehicle id="attacker_6" depart="8.00" departLane="0" arrivalLane="0" type="attacker" >
+        <route edges="e34 e41"/>
+    </vehicle>
+
+</routes>
+
+
+    
+    

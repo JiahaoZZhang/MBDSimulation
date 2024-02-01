@@ -1,0 +1,288 @@
+CPM-PerceivedObject-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) perceivedObject (5) version1 (1)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+
+Acceleration, CartesianAngle, CartesianAngularAcceleration, CartesianAngularSpeed, DynamicStatus, Identifier,
+LowerTriangularPositiveSemidefiniteMatrix, MatchedPosition, NumberOfPerceivedObjects, ObjectAge, ObjectConfidence,
+ObjectClassDescription, ObjectDimension, ObjectDistance, ObjectRefPoint, SensorIdList, SpeedExtended, TimeOfMeasurement
+FROM CPM-CommonDataTypes-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) commonDataTypes (2) version1 (1)};
+
+/** @brief Perceived Object Container
+A list of perceived objects. Each object shall be described as defined in @see PerceivedObject.
+*/
+PerceivedObjectContainer ::= SEQUENCE {
+    /** @details numberOfPerceivedObjects
+    The total number of detected objects by the station at the time of generating the message.
+    Due to the dynamic message generation rules, this number does not have to reflect the number
+    of objects included in this message but states the number of objects known to the sender at
+    the time of generating the message.
+    */
+    numberOfPerceivedObjects    NumberOfPerceivedObjects DEFAULT 0,
+    perceivedObjects            SEQUENCE SIZE(1..128, ...) OF PerceivedObject
+}
+
+/** @brief Perceived Object
+An object in the context of the CP Service refers to the kinematic and attitude representation of
+a detected object within a sensor’s perception range. An object may be reported directly by a
+sensor or a sensor fusion system.
+*/
+PerceivedObject ::= SEQUENCE {
+    /** @details objectID
+    Identifier assigned to a detected object which remains constant as long as the object is
+    perceived by the disseminating ITS-S. Numbers are assigned in an increasing round-robin
+    fashion. When the last identifier in the allowed range has been used, the first counter for
+    the identifier starts from the beginning of the range again.
+    */
+    objectID                Identifier,
+    /** @details timeOfMeasurement
+    Provides the time difference from the message’s generation delta time to the time of the
+    measurement of the object.
+    */
+    timeOfMeasurement       TimeOfMeasurement,
+    /** @details xDistance
+    Distance to detected object from the ITS-S's reference point in x-direction for the time
+    of measurement. For a vehicle, the distance is reported in a body-fixed coordinate system
+    as provided by ISO 8855. For a RSU, the distance is reported in a coordinate system in which
+    the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-
+    axis to the vertical direction.
+    */
+    xDistance               ObjectDistance,
+    /** @details yDistance
+    Distance to detected object from the ITS-S's reference point in y-direction for the time
+    of measurement. For a vehicle, the distance is reported in a body-fixed coordinate system
+    as provided by ISO 8855. For a RSU, the distance is reported in a coordinate system in which
+    the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-
+    axis to the vertical direction
+    */
+    yDistance               ObjectDistance,
+    /** @details zDistance
+    Distance to detected object from the ITS-S's reference point in z-direction for the time
+    of measurement. For a vehicle, the distance is reported in a body-fixed coordinate system
+    as provided by ISO 8855. For a RSU, the distance is reported in a coordinate system in which
+    the y-axis corresponds to the North direction, the x-axis to the East direction, and the z-
+    axis to the vertical direction
+    */
+    zDistance               ObjectDistance OPTIONAL,
+    /** @details xSpeed
+    Speed of the detected object in the detecting ITS-S’s reference system in x-direction for the
+    time of measurement (i.e. speed of the object relative to the origin of the station’s reference
+    system). For a vehicle, the speed is reported in a body-fixed coordinate system as provided by
+    ISO 8855 originating at the ITS-station’s reference point. For a RSU, the speed is reported in
+    a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the
+    East direction, and the z-axis to the vertical direction.
+    */
+    xSpeed                  SpeedExtended,
+    /** @details ySpeed
+    Speed of the detected object in the detecting ITS-S’s reference system in y-direction for the
+    time of measurement (i.e. speed of the object relative to the origin of the station’s reference
+    system). For a vehicle, the speed is reported in a body-fixed coordinate system as provided by
+    ISO 8855 originating at the ITS-station’s reference point. For a RSU, the speed is reported in
+    a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the
+    East direction, and the z-axis to the vertical direction.
+    */
+    ySpeed                  SpeedExtended,
+    /** @details zSpeed
+    Speed of the detected object in the detecting ITS-S’s reference system in z-direction for the
+    time of measurement (i.e. speed of the object relative to the origin of the station’s reference
+    system). For a vehicle, the speed is reported in a body-fixed coordinate system as provided by
+    ISO 8855 originating at the ITS-station’s reference point. For a RSU, the speed is reported in
+    a coordinate system in which the y-axis corresponds to the North direction, the x-axis to the
+    East direction, and the z-axis to the vertical direction.
+    */
+    zSpeed                  SpeedExtended OPTIONAL,
+    /** @details xAcceleration
+    Acceleration of the detected object from the ITS-S's reference point in x-direction
+    for the time of measurement. For a vehicle, the acceleration is reported in a body-fixed
+    coordinate system as provided by ISO 8855 originating at the ITS-station’s reference point.
+    For a RSU, the acceleration is reported in a coordinate system in which the y-axis corresponds
+    to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction.
+    */
+    xAcceleration           Acceleration OPTIONAL,
+    /** @details yAcceleration
+    Acceleration of the detected object from the ITS-S's reference point in y-direction
+    for the time of measurement. For a vehicle, the acceleration is reported in a body-fixed
+    coordinate system as provided by ISO 8855 originating at the ITS-station’s reference point.
+    For a RSU, the acceleration is reported in a coordinate system in which the y-axis corresponds
+    to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction.
+    */
+    yAcceleration           Acceleration OPTIONAL,
+    /** @details zAcceleration
+    Acceleration of the detected object from the ITS-S's reference point in z-direction
+    for the time of measurement. For a vehicle, the acceleration is reported in a body-fixed
+    coordinate system as provided by ISO 8855 originating at the ITS-station’s reference point.
+    For a RSU, the acceleration is reported in a coordinate system in which the y-axis corresponds
+    to the North direction, the x-axis to the East direction, and the z-axis to the vertical direction.
+    */
+    zAcceleration           Acceleration OPTIONAL,
+    /** @details rollAngle
+    Roll angle of object from the ITS-S's reference point. For a vehicle, the angle is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angle is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angle is measured with positive values considering the object orientation turning
+    counter-clockwise around the x-axis.
+    */
+    rollAngle                CartesianAngle OPTIONAL,
+    /** @details pitchAngle
+    Pitch angle of object from the ITS-S's reference point. For a vehicle, the angle is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angle is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angle is measured with positive values considering the object orientation turning
+    counter-clockwise around the y-axis.
+    */
+    pitchAngle                CartesianAngle OPTIONAL,
+    /** @details yawAngle
+    Yaw angle of object from the ITS-S's reference point. For a vehicle, the angle is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angle is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angle is measured with positive values considering the object orientation turning
+    counter-clockwise around the z-axis.
+    */
+    yawAngle                CartesianAngle OPTIONAL,
+    /** @details rollRate
+    Roll rate of object from the ITS-S's reference point. For a vehicle, the angular rate is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angular rate is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angular rate is measured with positive values considering the object orientation turning
+    counter-clockwise around the x-axis.
+    */
+    rollRate                CartesianAngularSpeed OPTIONAL,
+    /** @details pitchRate
+    Pitch rate of object from the ITS-S's reference point. For a vehicle, the angular rate is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angular rate is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angular rate is measured with positive values considering the object orientation turning
+    counter-clockwise around the y-axis.
+    */
+    pitchRate                CartesianAngularSpeed OPTIONAL,
+    /** @details yawRate
+    Yaw rate of object from the ITS-S's reference point. For a vehicle, the angular rate is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angular rate is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angular rate is measured with positive values considering the object orientation turning
+    counter-clockwise around the z-axis.
+    */
+    yawRate                CartesianAngularSpeed OPTIONAL,
+    /** @details rollAcceleration
+    Roll acceleration of object from the ITS-S's reference point. For a vehicle, the angular acceleration is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angular acceleration is measured with positive values considering the object orientation turning
+    counter-clockwise around the x-axis.
+    */
+    rollAcceleration                CartesianAngularAcceleration OPTIONAL,
+    /** @details pitchAcceleration
+    Pitch acceleration of object from the ITS-S's reference point. For a vehicle, the angular acceleration is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angular acceleration is measured with positive values considering the object orientation turning
+    counter-clockwise around the y-axis.
+    */
+    pitchAcceleration                CartesianAngularAcceleration OPTIONAL,
+    /** @details yawAcceleration
+    Yaw acceleration of object from the ITS-S's reference point. For a vehicle, the angular acceleration is
+    reported in a body-fixed coordinate system as provided by ISO 8855 originating at the ITS-station’s
+    reference point. For a RSU, the angular acceleration is reported in a coordinate system in which the y-axis
+    corresponds to the North direction, the x-axis to the East direction, and the z- axis to the vertical direction.
+    The angular acceleration is measured with positive values considering the object orientation turning
+    counter-clockwise around the z-axis.
+    */
+    yawAcceleration                CartesianAngularAcceleration OPTIONAL,
+    /** @details lowerTriangularCorrelationMatrixColumns
+    Provides the columns of a lower triangular positive semi definite correlation matrix for the
+    kinematic state and attitude space provided for this object.
+    The order of the columns and rows of the correlation matrix is as follows:
+        - xDistance
+        - yDistance
+        - zDistance
+        - xSpeed
+        - ySpeed
+        - zSpeed
+        - xAcceleration
+        - yAcceleration
+        - zAcceleration
+        - rollAngle
+        - pitchAngle
+        - yawAngle
+        - rollRate
+        - pitchRate
+        - yawRate
+        - rollAcceleration
+        - pitchAcceleration
+        - yawAcceleration
+    The number of lowerTriangularCorrelationMatrixColumns to be included "k" is thereby the number of provided
+    values "n" of the kinematic state and attitude space minus 1: k = n-1.
+    Each column "i" of the lowerTriangularCorrelationMatrixColumns contains k-(i-1) values.
+    In case certain values of the kinematic state and attitude space are not provided, they are omitted from
+    the lowerTriangularCorrelationMatrixColumns.
+    */
+    lowerTriangularCorrelationMatrixColumns       LowerTriangularPositiveSemidefiniteMatrix OPTIONAL,
+    /** @details planarObjectDimension1
+    First dimension of object as provided by the sensor or environment model. This dimension is
+    always contained in the plane which is oriented perpendicular to the direction of the angle
+    indicated by the yawAngle and which contains the object's reference point.
+    */
+    planarObjectDimension1  ObjectDimension OPTIONAL,
+    /** @details planarObjectDimension2
+    Second dimension of the object as provided by the sensor environment model. This dimension is
+    contained in the plane oriented in the direction of the angle indicated by the yawAngle and
+    the object's reference point.
+    */
+    planarObjectDimension2  ObjectDimension OPTIONAL,
+    /** @details verticalObjectDimension
+    Vertical dimension of object as provided by the sensor or object model.
+    */
+    verticalObjectDimension ObjectDimension OPTIONAL,
+    /** @details objectRefPoint
+    The reference point on the perceived object. The kinematic attitude and state data provided
+    for this object are valid for this reference point of the object. In case no object reference
+    point can be determined, it is assumed to be the center point of the detected object.
+    */
+    objectRefPoint          ObjectRefPoint DEFAULT 0,
+    /** @details objectAge
+    Provides the age of the detected and described object.
+    */
+    objectAge               ObjectAge,
+    /** @details objectConfidence
+    The confidence associated to the object. The computation of the object confidence is based on a sensor's or
+    fusion system's specific detection confidence, the binary detection success that is, if an object
+    has been successfully detected by the last measurement and the object age.
+    */
+    objectConfidence        ObjectConfidence OPTIONAL,
+    /** @details sensorIDList
+    List of sensor-IDs which provided the measurement data. Refers to the sensorID in the
+    @see SensorInformationContainer.
+    If the @see SensorInformationContainer is never provided by the disseminating ITS-S, the list shall be
+    populated with random numbers, where each number is assigned to a sensor of the transmitting station.
+    */
+    sensorIDList            SensorIdList OPTIONAL,
+    /** @details dynamicStatus
+    Indicated the dynamic capabilities of a detected object.
+    */
+    dynamicStatus           DynamicStatus OPTIONAL,
+    /** @details classification
+    Provides the classification of the described object. Multi-dimensional classification may be
+    provided.
+    */
+    classification          ObjectClassDescription OPTIONAL,
+    /** @details matchedPosition
+    The optional map-matched position of an object. This requires that a MAP-message is provided.
+    */
+    matchedPosition         MatchedPosition OPTIONAL,
+    ...
+}
+
+END

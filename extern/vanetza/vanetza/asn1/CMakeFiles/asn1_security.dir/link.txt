@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../lib/static/libvanetza_asn1_security.a CMakeFiles/asn1_security.dir/asn1_security_no_sources.c.o
+/usr/bin/ranlib ../../lib/static/libvanetza_asn1_security.a

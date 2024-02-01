@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<services>
+    <service type="artery.application.F2MD.F2MD_RsuCPService">
+        <listener port="2009" />
+    </service>
+</services>

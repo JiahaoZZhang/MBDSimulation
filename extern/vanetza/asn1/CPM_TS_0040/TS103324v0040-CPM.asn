@@ -1,0 +1,153 @@
+--! @brief Specification of the Collective Perception Message ETSI TS 103 324
+--! Latest version available at @url https://forge.etsi.org/rep/ITS/CPM_TS103324
+
+CPM-PDU-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) cpm (1) version1 (1)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+/** @brief Include ETSI TS 102 894-2 v1.3.1
+Include references from @url https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/blob/v1.3.1/ITS-Container.asn
+*/
+ItsPduHeader, ReferencePosition, StationType
+FROM ITS-Container {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (102894) cdd (2) version (2) }
+
+/** @brief Include ETSI EN 302 637-2 v1.4.1
+Include references from @url https://forge.etsi.org/rep/ITS/asn1/cam_en302637_2/blob/v1.4.1/CAM-PDU-Descriptions.asn
+*/
+GenerationDeltaTime
+FROM CAM-PDU-Descriptions {itu-t(0) identified-organization(4) etsi(0) itsDomain(5) wg1(1) en(302637) cam(2) version(2)}
+
+MessageSegmentInfo
+FROM CPM-CommonDataTypes-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) commonDataTypes (2) version1 (1)}
+
+--! @brief Import Originating Vehicle Container
+OriginatingVehicleContainer, OriginatingRSUContainer
+FROM CPM-OriginatingStationData-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) originatingStationData (3) version1 (1)}
+
+--! @brief Import Sensor Information Container
+SensorInformationContainer
+FROM CPM-SensorInformation-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) sensorInformation (4) version1 (1)}
+
+PerceivedObjectContainer
+FROM CPM-PerceivedObject-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) perceivedObject (5) version1 (1)}
+
+FreeSpaceAddendumContainer
+FROM CPM-FreeSpaceAddendum-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) freeSpaceAddendum (6) version1 (1)};
+
+--! Information Object Class Definitions
+CPM-STATIONDATA-ID-AND-TYPE ::= CLASS {
+    &id     CpmStationDataId UNIQUE,
+    &Type
+} WITH SYNTAX {&Type IDENTIFIED BY &id}
+
+CpmStationDataContainer {CPM-STATIONDATA-ID-AND-TYPE : Set} ::= SEQUENCE {
+   containerId     CPM-STATIONDATA-ID-AND-TYPE.&id( {Set} ),
+   containerData   CPM-STATIONDATA-ID-AND-TYPE.&Type( {Set}{@containerId} )
+}
+
+CPM-CONTAINER-ID-AND-TYPE ::= CLASS {
+    &id     CpmContainerId UNIQUE,
+    &Type
+} WITH SYNTAX {&Type IDENTIFIED BY &id}
+
+CpmPerceptionDataContainer {CPM-CONTAINER-ID-AND-TYPE : Set} ::= SEQUENCE {
+   containerId     CPM-CONTAINER-ID-AND-TYPE.&id( {Set} ),
+   containerData   CPM-CONTAINER-ID-AND-TYPE.&Type( {Set}{@containerId} )
+}
+
+CpmStationDataId ::= INTEGER (0..255)
+CpmContainerId ::= INTEGER (0..255)
+
+-- Information Object Class Registry
+OriginatingStationData CPM-STATIONDATA-ID-AND-TYPE ::= {
+    {OriginatingVehicleContainer IDENTIFIED BY originatingStationVehicleContainer} |
+    {OriginatingRSUContainer IDENTIFIED BY originatingStationRSUContainer},
+    ...
+}
+
+PerceptionData CPM-CONTAINER-ID-AND-TYPE ::= {
+    {SensorInformationContainer IDENTIFIED BY sensorInformationCpmContainer} |
+    {PerceivedObjectContainer IDENTIFIED BY perceivedObjectCpmContainer} |
+    {FreeSpaceAddendumContainer IDENTIFIED BY freeSpaceAdddendumCpmContainer},
+    ...
+}
+
+--! ID Assignments for Information Object Classes
+--! Assignment for Originating Station Container
+originatingStationVehicleContainer CpmStationDataId ::= 1
+originatingStationRSUContainer CpmStationDataId ::= 2
+
+--! Assignment for Perception Data Container
+sensorInformationCpmContainer CpmContainerId ::= 1
+perceivedObjectCpmContainer CpmContainerId ::= 2
+freeSpaceAdddendumCpmContainer CpmContainerId ::= 3
+
+--! Collective Perception Message
+
+/** @brief Collective Perception Message Root
+This DF includes DEs for the CPM protocolVersion, the CP message type identifier _messageID_ and
+the station identifier _stationID_ of the originating ITS-S.
+*/
+CPM ::= SEQUENCE {
+    /** @details header
+    The DE _protocolVersion_ is used to select the appropriate protocol decoder at the receiving
+    ITS-S. It shall be set to @todo cpm(15).
+    The DE _messageID_ shall be harmonized with other V2X message identifier definitions.
+    */
+    header ItsPduHeader,
+    cpm CollectivePerceptionMessage
+}
+
+/** Collective Perception Message
+This is the actual CPM Payload. It shall include the time stamp of the CPM and the applicable
+containers of type _PerceptionData_. The selection of the StationDataContainer type container
+depends on the _StationType_ as selected in the @see CpmManagementContainer
+*/
+CollectivePerceptionMessage ::= SEQUENCE {
+    generationDeltaTime GenerationDeltaTime,
+    cpmParameters       CpmParameters
+}
+
+/** CPM Parameters
+The sequence of mandatory and optional containers. Other containers may be added in the future.
+*/
+CpmParameters ::= SEQUENCE {
+    /** @brief managementContainer
+    The managementContainer comprises basic information about the originating ITS-S, which are
+    not specific to vehicles or RSUs.
+    */
+    managementContainer     CpmManagementContainer,
+    /** @brief stationDataContainer
+    The stationDataContainer comprises ITS-S type specific information about the sending station.
+    */
+    stationDataContainer    CpmStationDataContainer {{OriginatingStationData}} OPTIONAL,
+    /** @brief perceptionData
+    The perceptionData comprises different container types for describing the sensory properties
+    of the transmitting ITS-S, its detected objects and free space estimates.
+    */
+    perceptionData          SEQUENCE SIZE(1..255) OF CpmPerceptionDataContainer {{PerceptionData}} OPTIONAL,
+    ...
+}
+
+/** @brief CPM Management Container
+The managementContainer comprises basic information about the originating ITS-S, which are not
+specific to vehicles or RSUs.
+*/
+CpmManagementContainer ::= SEQUENCE {
+    stationType                             StationType,
+    /** @brief messageSegmentInfo
+    The perceived object container segment info describes the segmentation information in case
+    the data for CPM transmission needs to be split up into multiple messages due to
+    message size constraints.
+    */
+    messageSegmentInfo     MessageSegmentInfo OPTIONAL,
+    referencePosition      ReferencePosition,
+    ...
+}
+
+END

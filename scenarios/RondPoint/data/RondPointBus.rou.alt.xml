@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-02-13 18:48:49 by Eclipse SUMO duarouter Version 1.15.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
+
+    <input>
+        <net-file value="data/RondPoint.net.xml"/>
+        <route-files value="data/RondPointBus.flow.xml"/>
+    </input>
+
+    <output>
+        <output-file value="data/RondPointBus.rou.xml"/>
+    </output>
+
+    <processing>
+        <repair value="true"/>
+    </processing>
+
+    <report>
+        <ignore-errors value="true"/>
+    </report>
+
+</configuration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="Bus" length="6.00" minGap="3.00" maxSpeed="25.00" guiShape="bus" accel="2.8" decel="4.5" sigma="0.5"/>
+    <vehicle id="BusFlowNorthSouth0.0" type="Bus" depart="0.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth0.0" type="Bus" depart="0.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth.0" type="Bus" depart="900.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth.0" type="Bus" depart="900.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth.1" type="Bus" depart="1350.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth1.0" type="Bus" depart="1800.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth1.0" type="Bus" depart="1800.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth1.1" type="Bus" depart="2250.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth2.0" type="Bus" depart="2700.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth2.0" type="Bus" depart="2700.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth2.1" type="Bus" depart="3150.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth3.0" type="Bus" depart="3600.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth3.0" type="Bus" depart="3600.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth3.1" type="Bus" depart="4050.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth3.1" type="Bus" depart="4050.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth4.0" type="Bus" depart="4500.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth4.0" type="Bus" depart="4500.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth4.1" type="Bus" depart="4950.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth5.0" type="Bus" depart="5400.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth5.0" type="Bus" depart="5400.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth5.1" type="Bus" depart="5850.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth5.1" type="Bus" depart="5850.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowNorthSouth6.0" type="Bus" depart="6300.00">
+        <routeDistribution last="0">
+            <route cost="17.60" probability="1.00000000" edges="28925528 240142917#1 -1360 -1362 239331353"/>
+        </routeDistribution>
+    </vehicle>
+    <vehicle id="BusFlowSouthNorth6.0" type="Bus" depart="6300.00">
+        <routeDistribution last="0">
+            <route cost="17.67" probability="1.00000000" edges="239331354 240143209 240143210 -1358 105490284"/>
+        </routeDistribution>
+    </vehicle>
+</routes>

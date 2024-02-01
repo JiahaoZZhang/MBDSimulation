@@ -1,0 +1,16 @@
+Loading net-file from '/home/jiahao/f2md_on_artery/scenarios/mini_LuST/lust.net.xml' ... done (719ms).
+Loading additional-files from '/home/jiahao/f2md_on_artery/scenarios/mini_LuST/vtypes.add.xml' ... done (1ms).
+Loading additional-files from '/home/jiahao/f2md_on_artery/scenarios/mini_LuST/busstops.add.xml' ... done (7ms).
+Loading additional-files from '/home/jiahao/f2md_on_artery/scenarios/mini_LuST/e1detectors.add.xml' ... done (28ms).
+Loading additional-files from '/home/jiahao/f2md_on_artery/scenarios/mini_LuST/lust.poly.xml' ... done (312ms).
+Loading done.
+Simulation ended at time: 0.00
+Performance: 
+ Duration: 163.23s
+ Real time factor: 0
+ UPS: 0.000000
+Vehicles: 
+ Inserted: 0 (Loaded: 7)
+ Running: 0
+ Waiting: 0
+

@@ -1,0 +1,930 @@
+CPM-CommonDataTypes-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) commonDataTypes (2) version1 (1)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+/** @brief Include ETSI TS 102 894-2 v1.3.1
+Include references from @url https://forge.etsi.org/rep/ITS/asn1/cdd_ts102894_2/blob/v1.3.1/ITS-Container.asn
+*/
+SpeedConfidence, AccelerationConfidence, VehicleWidth
+FROM ITS-Container {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (102894) cdd (2) version (2)}
+
+/** @brief Include ISO 19091
+Include references from @url https://standards.iso.org/iso/ts/19091/ed-2/en/ISO-TS-19091-addgrp-C-2018.asn
+*/
+VehicleHeight, LaneID, NodeOffsetPointXY, Offset-B10, Offset-B11, Offset-B12, Offset-B13, Offset-B14, Offset-B16
+FROM DSRC {iso (1) standard (0) signalizedIntersection (19091) profilec(2) dsrc (2) version2 (2)}
+
+
+/** @brief Include ETSI TS 103 300-3 V2.1.1
+Include references from https://forge.etsi.org/rep/ITS/asn1/vam-ts103300_3/tree/v2.1.1/
+*/
+VruProfileAndSubprofile, ClusterId, ClusterProfiles, ClusterCardinalitySize
+FROM VAM-PDU-Descriptions {itu-t(0) identified-organization(4) etsi(0) itsDomain(5)
+    wg1(1) ts(103300) vam(1) version1(1)};
+
+/** @brief Area Circular
+Describes a circular area. The circle is centred about the reference point of the ITS-S or about
+the nodeCenterPoint (if provided). The DF shall include the following information:
+*/
+AreaCircular ::= SEQUENCE {
+    /** @details nodeCenterPoint
+    Optional offset point about which the circle is centred with respect to the reference
+    position of the ITS-S.
+    */
+    nodeCenterPoint      OffsetPoint OPTIONAL,
+    /** @details radius
+    The radius of the circular area
+    */
+    radius               Radius
+}
+
+/** @brief Area Ellipse
+Describes an elliptical area. The ellipse is centred about the reference point of the ITS-S or
+about the nodeCenterPoint (if provided).
+*/
+AreaEllipse  ::= SEQUENCE {
+    /** @details nodeCenterPoint
+    Optional offset point about which the ellipse is centred with respect to the reference
+    position of the ITS-S.
+    */
+    nodeCenterPoint             OffsetPoint OPTIONAL,
+    /** @details semiMinorRangeLength
+    Major radius of the ellipse.
+    */
+    semiMinorRangeLength        SemiRangeLength,
+    /** @details semiMajorRangeLength
+    Minor radius of the ellipse.
+    */
+    semiMajorRangeLength        SemiRangeLength,
+    /** @details semiMajorRangeOrientation
+    Orientation of the semiMajorRangeLength of the ellipse in the WGS84 coordinate system.
+    */
+    semiMajorRangeOrientation   WGS84AngleValue,
+    semiHeight                  SemiRangeLength OPTIONAL
+}
+
+/** @brief Area Rectangle
+Describes a rectangular area. The rectangle is centred about the reference point of the ITS-S or
+about the nodeCenterPoint (if provided).
+*/
+AreaRectangle ::= SEQUENCE {
+    /** @details nodeCenterPoint
+    Optional offset point about which the rectangle is centred with respect to the reference
+    position of the ITS-S.
+    */
+    nodeCenterPoint             OffsetPoint OPTIONAL,
+    /** @details semiMajorRangeLength
+    Half length of the rectangle.
+    */
+    semiMajorRangeLength        SemiRangeLength,
+    /** @details semiMinorRangeLength
+    Half width of the rectangle.
+    */
+    semiMinorRangeLength        SemiRangeLength,
+    /** @details semiMajorRangeOrientation
+    Orientation of the semiMajorRangeLength of the rectangle in the WGS84 coordinate system.
+    */
+    semiMajorRangeOrientation   WGS84AngleValue,
+    semiHeight                  SemiRangeLength OPTIONAL
+}
+
+/** @brief Area Polygon
+Describes a polygonal area constructed by connecting the offset points in the sequence
+provided. The last point shall be connected with the first point to close the polygon.
+*/
+AreaPolygon ::= SEQUENCE {
+    polyPointList   PolyPointList
+}
+
+/** @brief Poly Point List
+Describes a list of points representing a polygon. The last point shall be connected with the
+first point to close the polygon.
+*/
+PolyPointList ::= SEQUENCE (SIZE(3..16, ...)) OF OffsetPoint
+
+/** @brief Area Radial
+Describes a radial area scanned by a stationary sensor. The triangular or cone-shaped area is
+constructed by sweeping the provided range about the reference point of the ITS-S or about the
+point described by the sensor offset point (if provided) with respect to the reference point
+between a horizontal start and a horizontal end angle in positive angular direction of the WGS84
+coordinate system. A vertical opening angle may be provided in a Cartesian coordinate system with
+the x-axis located in the North-East plane of the WGS84 coordinate system. The sensor height may
+be provided to reflect characteristics of sensors mounted at an altitude (e.g. sensors mounted
+above intersections).
+*/
+AreaRadial ::= SEQUENCE {
+    /** @details range
+    The radial range of the sensor from the reference point or sensor point offset.
+    */
+    range                                   Range,
+    /** @details stationaryHorizontalOpeningAngleStart
+    The orientation indicating the beginning of the stationary sensor’s horizontal opening angle
+    in positive angular direction with respect to the WGS84 coordinate system.
+    */
+    stationaryHorizontalOpeningAngleStart   WGS84AngleValue,
+    /** @details stationaryHorizontalOpeningAngleEnd
+    The orientation indicating the end of the stationary sensor’s horizontal opening angle in
+    positive angular direction with respect to the WGS84 coordinate system.
+    */
+    stationaryHorizontalOpeningAngleEnd     WGS84AngleValue,
+    /** @details verticalOpeningAngleStart
+    The orientation indicating the beginning of the stationary sensor’s vertical opening angle in
+    positive angular direction of a Cartesian coordinate system with its x-axis located in the
+    north-east plane of the WGS84 coordinate system.
+    */
+    verticalOpeningAngleStart               CartesianAngleValue OPTIONAL,
+    /** @details verticalOpeningAngleEnd
+    The orientation indicating the end of the stationary sensor’s vertical opening angle in
+    positive angular direction of a Cartesian coordinate system with its x-axis located in the
+    north-east plane of the WGS84 coordinate system.
+    */
+    verticalOpeningAngleEnd                 CartesianAngleValue OPTIONAL,
+    /** @details sensorPositionOffset
+    The offset of the mounting poinf of this sensor from the station's @see ReferencePosition.
+    */
+    sensorPositionOffset                    OffsetPoint OPTIONAL,
+    /** @details sensorHeight
+    The height of the sensor mounting point.
+    */
+    sensorHeight                            SensorHeight OPTIONAL,
+    ...
+}
+
+/** @brief Object Distance With Confidence
+A general Data Frame to describe a distance component along with a confidence with a
+predefined confidence level of 95% for the component.
+*/
+ObjectDistance ::= SEQUENCE {
+    /** @details value
+    The distance value which can be estimated as the mean of the current distribution.
+    */
+    value        DistanceValue,
+    /** @details confidence
+    The distance accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence   DistanceConfidence
+}
+
+/** @brief Object Dimension
+A general Data Frame to describe a dimension of an object along with a confidence with a
+predefined confidence level of 95% for the component.
+*/
+ObjectDimension ::= SEQUENCE {
+    /** @details value
+    The object dimension value which can be estimated as the mean of the current distribution.
+    */
+    value       ObjectDimensionValue,
+    /** @details confidence
+    The dimension accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence  ObjectDimensionConfidence
+}
+
+/** @brief Cartesian Angle
+A general Data Frame to describe an angle component along with a confidence with a predefined
+confidence level of 95% for the component in a Cartesian coordinate system.
+*/
+CartesianAngle ::= SEQUENCE {
+    /** @details value
+    The angle value which can be estimated as the mean of the current distribution.
+    */
+    value       CartesianAngleValue,
+    /** @details confidence
+    The accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence  AngleConfidence
+}
+
+/** @brief CartesianAngularSpeed
+A general Data Frame to describe an angular speed component along with a confidence with a predefined
+confidence level of 95% for the component in a Cartesian coordinate system.
+*/
+CartesianAngularSpeed ::= SEQUENCE {
+    /** @details value
+    The angular speed (rate) value which can be estimated as the mean of the current distribution.
+    */
+    value       CartesianAngularSpeedValue,
+    /** @details confidence
+    The accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence  AngularSpeedConfidence
+}
+
+/** @brief CartesianAngularAcceleration
+A general Data Frame to describe an angular acceleration component along with a confidence with a predefined
+confidence level of 95% for the component in a Cartesian coordinate system.
+*/
+CartesianAngularAcceleration ::= SEQUENCE {
+    /** @details value
+    The angular acceleration value which can be estimated as the mean of the current distribution.
+    */
+    value       CartesianAngularAccelerationValue,
+    /** @details confidence
+    The accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence  AngularAccelerationConfidence
+}
+
+/** @brief WGS 84 Angle
+A general Data Frame to describe an angular component along with a confidence with a predefined
+confidence level of 95% for the component in the WGS84 coordinate system.
+*/
+WGS84Angle ::= SEQUENCE {
+    /** @details value
+    The angle value which can be estimated as the mean of the current distribution.
+    */
+    value       WGS84AngleValue,
+    /** @details confidence
+    The accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence  AngleConfidence
+}
+
+/** @brief Speed Extended
+A general Data Frame to describe a speed component along with a confidence with a predefined
+confidence level of 95% for the component.
+*/
+SpeedExtended ::= SEQUENCE {
+    /** @details value
+    The speed value which can be estimated as the mean of the current distribution.
+    */
+    value       SpeedValueExtended,
+    /** @details confidence
+    The accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence  SpeedConfidence
+}
+
+/** @brief Acceleration
+A general Data Frame to describe an acceleration component along with a confidence with a predefined
+confidence level of 95% for the component.
+*/
+Acceleration ::= SEQUENCE {
+    /** @details value
+    The acceleration value which can be estimated as the mean of the current distribution.
+    */
+    value       AccelerationValue,
+    /** @details confidence
+    The accuracy associated to the provided value at a predefined confidence level
+    of 95% for the component.
+    */
+    confidence  AccelerationConfidence
+}
+
+/** @brief Sensor ID List
+List of sensor IDs.
+*/
+SensorIdList ::= SEQUENCE SIZE(1..128, ...) OF Identifier
+
+/** @brief Trailer Data Container
+List of information about attached trailers.
+*/
+TrailerDataContainer ::= SEQUENCE SIZE(1..2) OF TrailerData
+
+/** @brief Trailer Data
+Provides detailed information about the dimensions and orientation of an attached trailer.
+*/
+TrailerData ::= SEQUENCE {
+    refPointId          RefPointId,
+    hitchPointOffset    HitchPointOffset,
+    frontOverhang       FrontOverhang,
+    rearOverhang        RearOverhang,
+    trailerWidth        VehicleWidth OPTIONAL,
+    hitchAngle          CartesianAngle OPTIONAL,
+    ...
+}
+
+/** @brief Matched Position
+Indicates the position of the object mapped on the intersection topology description transmitted
+in MAP messages.
+*/
+MatchedPosition ::= SEQUENCE {
+    /** @details laneID
+    Conveys an assigned index that is unique within the intersection with InterSectionReferenceId
+    of the OriginatingRSUContainer. It shall be presented as specified in
+    Clause 7.88 of SAE J2735.
+    */
+    laneID                      LaneID OPTIONAL,
+    /** @details longitudinalLanePosition
+    Indicates the longitudinal offset of the map-matched position of the object along the lane.
+    */
+    longitudinalLanePosition    LongitudinalLanePosition OPTIONAL,
+    ...
+}
+
+/** @brief Longitudinal Lane Position
+Estimated position along the longitudinal length of a particular lane. A lane is provided by
+a corresponding MAP message.
+*/
+LongitudinalLanePosition ::= SEQUENCE {
+    /** @details longitudinalLanePositionValue
+    The mean value of the longitudinal position within a particular length.
+    */
+    longitudinalLanePositionValue        LongitudinalLanePositionValue,
+    /** @details longitudinalLanePositionConfidence
+    The confidence associated to the provided value.
+    */
+    longitudinalLanePositionConfidence   LongitudinalLanePositionConfidence
+}
+
+/** @brief Message Segment Information
+Information about segmented CPM and the number of generated segments.
+*/
+MessageSegmentInfo ::= SEQUENCE {
+    /** @details totalMsgSegments
+    The total number of messages required on the transmitter side to distribute the information
+    to several messages.
+    */
+    totalMsgSegments    SegmentCount,
+    /** @details thisSegmentNum
+    Indicates the number of the received message out of the total number of messages
+    used to realize segmentation.
+    */
+    thisSegmentNum      SegmentCount
+}
+
+/** @brief Lower Triangular Positive Semi-Definite Matrix
+A general data frame to express the elements of a lower triangular positive semi-definite matrix, not
+including the main diagonal elements of the matrix.
+Given a matrix "A" of size n x n, the number of columns to be included in the lower triangular matrix is k=n-1.
+*/
+LowerTriangularPositiveSemidefiniteMatrix ::= SEQUENCE SIZE (1..17) OF CorrelationColumn
+
+/** @brief Correlation Column
+The column of the lower triangular positive semi-definite matrix consists of correlation row values.
+Given a matrix "A" of size n x n, the number of columns to be included in the lower triangular matrix is k=n-1.
+Each column "i" of the lower triangular then contains k-(i-1) values, where "i" refers to the column number count
+starting at 1 from the left.
+*/
+CorrelationColumn ::= SEQUENCE SIZE (1..17) OF CorrelationRowValue
+
+/** @brief Correlation Row Value
+The Bravais-Pearson correlation value for each cell of the lower triangular correlation matrix.
+Scaled by 100.
+@unit: None
+*/
+CorrelationRowValue ::= INTEGER {
+    full-negative-correlation    (-100),     --< Full negative correlation
+    no-correlation               (0),        --< If not correlated or unavailable
+    point-one                    (10),
+    full-positive-correlation    (100)       --< Full positive correlation
+} (-100..100)
+
+/** @brief Object Class Description
+A list of object classes.
+*/
+ObjectClassDescription ::= SEQUENCE (SIZE(1..8)) OF ObjectClassWithConfidence
+
+/** @brief Object Class with Confidence
+Describes the classification of a detected object. The classification is provided with a
+confidence indication.
+*/
+ObjectClassWithConfidence ::= SEQUENCE {
+    objectClass ObjectClass,
+    confidence  ClassConfidence
+}
+
+/** @brief Object Class
+The class that best describes the detected object. The object can be classified into one of three
+categories: vehicle, VRU and other. Each class provides optional subclasses.
+*/
+ObjectClass ::= CHOICE {
+    vehicleSubclass    VehicleSubclassType,
+    vruSubclass        VruSubclassType,
+    otherSubclass      OtherSubclassType,
+    ...
+}
+
+/** @brief VRU Subclass Type
+Describes if a detected object is a single VRU or a group of VRUs.
+*/
+VruSubclassType ::= CHOICE {
+    singleVru           VruProfileAndSubprofile,
+    vruGroupSubclass    VruGroupSubClassType
+}
+
+/** @brief VruGroup Subclass Type
+Describes the composition of a group of VRUs.
+*/
+VruGroupSubClassType ::= SEQUENCE {
+    /** @details groupType
+    Indicates the profiles of the VRUs detected in the group.
+    A group of VRUs may be composed of VRUs of several different profiles.
+    */
+    groupType   ClusterProfiles,
+    /** @details groupSize
+    Indicates an estimation of the number of VRUs in the group.
+    */
+    groupSize   ClusterCardinalitySize,
+    /** @details clusterID
+    If the group is associated to a VRU cluster, this element indicates the ID of the associated cluster.
+    The ClusterId can only be assigned if a VRU cluster which is transmitting VAMs has been detected.
+    */
+    clusterID   ClusterId OPTIONAL
+}
+
+/** @brief Offset Point
+Describes an offset position in a two- or three-dimensional plane as imported from
+CEN ISO/TS 19091. Excludes the node-LatLon DF and regional DF defined therein.
+*/
+OffsetPoint ::= SEQUENCE{
+    nodeOffsetPointxy   NodeOffsetPointXY (WITH COMPONENTS {..., node-LatLon ABSENT, regional ABSENT}),
+    nodeOffsetPointZ    NodeOffsetPointZ OPTIONAL
+}
+
+/** @brief Node Offset Point in Z-direction
+Describes the vertical offset from another point. This is specified in close resemblance
+to SAE J2735 _NodeOffsetPointXY_.
+*/
+NodeOffsetPointZ ::= CHOICE {
+    node-Z1 Offset-B10, --< node is within 5.11m of last node
+    node-Z2 Offset-B11, --< node is within 10.23m of last node
+    node-Z3 Offset-B12, --< node is within 20.47m of last node
+    node-Z4 Offset-B13, --< node is within 40.96m of last node
+    node-Z5 Offset-B14, --< node is within 81.91m of last node
+    node-Z6 Offset-B16  --< node is within 327.67m of last node
+}
+
+/** @brief Vehicle Subclass Type
+Describes the subclass of a detected object for class vehicle.
+@unit n/a
+*/
+VehicleSubclassType ::= INTEGER {
+    unknown             (0),    --< the type of vehicle is unknown
+    passengerCar        (1),    --< the detected object is a small passenger car as defined in
+                                --< UNECE/TRANS/WP.29/78/Rev.4 class M1
+    bus                 (2),    --< the detected object is a large passenger vehicle as defined
+                                --< in UNECE/TRANS/WP.29/78/Rev.4 class M2, M3
+    lightTruck          (3),    --< the detected object is a light goods vehicle as defined
+                                --< in UNECE/TRANS/WP.29/78/Rev.4 class N1
+    heavyTruck          (4),    --< the detected object is a heavy goods vehicle as defined
+                                --< in UNECE/TRANS/WP.29/78/Rev.4 class N2, N3
+    trailer             (5),    --< the detected object is an unpowered vehicle that is intended
+                                --< to be towed by a powered vehicle as defined in
+                                --< UNECE/TRANS/WP.29/78/Rev.4 class O
+    specialVehicles     (6),    --< the detected object is a vehicle which has a special purpose
+                                --< other than the above (e.g. moving road works vehicle)
+    tram                (7),    --< the detected object is a vehicle running on tracks along
+                                --< public streets
+    emergencyVehicle    (8),    --< the detected object is a vehicle used in an emergency situation
+                                --< such as an ambulance, police car or fire engine
+    agricultural        (9)     --< the detected object is a vehicle used for agricultural purposes
+} (0..255)
+
+/** @brief Other Subclass Type
+Describes the subclass of a detected object for class other.
+@unit n/a
+*/
+OtherSubclassType ::= INTEGER {
+    unknown         (0),
+    roadSideUnit    (1)
+} (0..255)
+
+/** @brief Class Confidence
+Describes the confidence value for the type of a detected object.
+@unit Percent
+*/
+ClassConfidence ::= INTEGER {
+    unknown             (0),    --< in case the confidence value is unknown but the reported
+                                --< classification is still valid.
+    onePercent          (1),
+    oneHundredPercent   (100),
+    unavailable         (101)   --< In case the class confidence value computation is not available
+                                --< for this object. Indicates that the class assignment is invalid.
+} (0..101)
+
+/** @brief WGS 84 Angle Value
+An angle value in degrees described in the WGS84 reference system with respect to the WGS84 north.
+@unit 0,1 degrees
+*/
+WGS84AngleValue ::= INTEGER {
+    wgs84North          (0),
+    wgs84East           (900),
+    wgs84South          (1800),
+    wgs84West           (2700),
+    unavailable         (3601)
+} (0..3601)
+
+/** @brief Cartesian Angle Value
+An angle value described in a local Cartesian coordinate system, counted positive in
+a right-hand local coordinate system from the abscissa.
+@unit 0,1 degrees
+*/
+CartesianAngleValue ::= INTEGER {
+    zeroPointOneDegree  (1),
+    oneDegree           (10),
+    unavailable         (3601)
+} (0..3601)
+
+/** @brief Cartesian Angular Speed Value
+An angular speed value described in a local Cartesian coordinate system, counted positive in
+a right-hand local coordinate system from the abscissa.
+@unit 0,01 degrees/s
+*/
+CartesianAngularSpeedValue ::= INTEGER {
+    noSpeed                             (0),
+    oneDegreePerSecondAntiClockwise     (100),
+    oneDegreePerSecondClockwise         (-100)
+} (-32766..32767)
+
+/** @brief Cartesian Angular Acceleration Value
+An angular acceleration value described in a local Cartesian coordinate system, counted positive in
+a right-hand local coordinate system from the abscissa.
+@unit 0,01 degrees/s^2 (degrees per second squared)
+*/
+CartesianAngularAccelerationValue ::= INTEGER {
+    noAcceleration                             (0),
+    oneDegreePerSecondSquaredAntiClockwise     (100),
+    oneDegreePerSecondSquaredClockwise         (-100)
+} (-32766..32767)
+
+
+/** @brief Angle Confidence
+The absolute accuracy of a reported angle value for a predefined confidence level (e.g. 95 %).
+The required confidence level is defined by the corresponding standards applying this DE.
+@unit 0,1 degrees
+*/
+AngleConfidence ::= INTEGER {
+    zeroPointOneDegree  (1),
+    oneDegree           (10),
+    outOfRange          (126),  --< if the  accuracy is out of range, i.e. greater than
+                                --< 12,5 degrees. A corresponding reported angle value shall be
+                                --< considered invalid and cannot be trusted.
+    unavailable         (127)   --< if the accuracy information is not available
+} (1..127)
+
+/** @brief Angular Speed Confidence
+The absolute accuracy of a reported angular speed value for a predefined confidence level (e.g. 95 %).
+The required confidence level is defined by the corresponding standards applying this DE.
+For correlation computation, maximum interval levels shall be assumed.
+@ n/a
+*/
+AngularSpeedConfidence ::= ENUMERATED {
+    degSec-000-01 (0),  --< if the accuracy is equal to or less than 0,01 degree/second
+    degSec-000-05 (1),  --< 1 if the accuracy is equal to or less than 0,05 degrees/second
+    degSec-000-10 (2),  --< if the accuracy is equal to or less than 0,1 degree/second
+    degSec-001-00 (3),  --< 3 if the accuracy is equal to or less than 1 degree/second
+    degSec-005-00 (4),  --< if the accuracy is equal to or less than 5 degrees/second
+    degSec-010-00 (5),  --< if the accuracy is equal to or less than 10 degrees/second
+    degSec-100-00 (6),  --< if the accuracy is equal to or less than 100 degrees/second
+    outOfRange (7),     --< if the accuracy is out of range, i.e. greater than 100 degrees/second
+    unavailable (8)     --< if the accuracy information is unavailable
+}
+
+/** @brief Angular Acceleration Confidence
+The absolute accuracy of a reported angular acceleration value for a predefined confidence level (e.g. 95 %).
+The required confidence level is defined by the corresponding standards applying this DE.
+For correlation computation, maximum interval levels shall be assumed.
+@ n/a
+*/
+AngularAccelerationConfidence ::= ENUMERATED {
+    degSecSquared-000-01 (0),  --< if the accuracy is equal to or less than 0,01 degree/second^2
+    degSecSquared-000-05 (1),  --< 1 if the accuracy is equal to or less than 0,05 degrees/second^2
+    degSecSquared-000-10 (2),  --< if the accuracy is equal to or less than 0,1 degree/second^2
+    degSecSquared-001-00 (3),  --< 3 if the accuracy is equal to or less than 1 degree/second^2
+    degSecSquared-005-00 (4),  --< if the accuracy is equal to or less than 5 degrees/second^2
+    degSecSquared-010-00 (5),  --< if the accuracy is equal to or less than 10 degrees/second^2
+    degSecSquared-100-00 (6),  --< if the accuracy is equal to or less than 100 degrees/second^2
+    outOfRange (7),     --< if the accuracy is out of range, i.e. greater than 100 degrees/second^2
+    unavailable (8)     --< if the accuracy information is unavailable
+}
+
+
+/** @brief Semi Range Length
+The length of an axis of an ellipsoid or rectangle, used to describe the extension in a
+particular direction.
+@unit 0,1 m
+*/
+SemiRangeLength ::= INTEGER {
+    zeroPointOneMeter   (1),
+    oneMeter            (10)
+} (0..10000)
+
+/** @brief Distance Value
+Distance from one point to another.
+@unit 0,01 m
+*/
+DistanceValue ::= INTEGER {
+    zeroPointZeroOneMeter   (1),
+    oneMeter                (100)
+} (-132768..132767)
+
+/** @brief Distance Confidence
+Absolute accuracy of measurement to a confidence level of 95%.
+@unit 0,01 m
+*/
+DistanceConfidence ::= INTEGER {
+    zeroPointZeroOneMeter   (1),
+    oneMeter                (100),
+    outOfRange              (4094),  --< shall be set if the accuracy is out of range
+    unavailable             (4095)   --< shall be set if the accuracy data is unavailable
+} (0..4095)
+
+/** @brief Dynamic Status
+Indication whether the detected object is classified as a dynamic (i.e. moving) object.
+This value indicates whether an object has the general capability to move, i.e. change its
+position.
+@unit n/a
+*/
+DynamicStatus ::= INTEGER {
+    dynamic             (0),    --< the object is moving
+    hasBeenDynamic      (1),    --< indicates whether an object has been dynamic before, e.g., a car
+                                --< stopping at a traffic light
+    static              (2)     --< shall be used in case an object is identified to be not moving
+                                --< throughout any previous observation
+} (0..2)
+
+/** @brief Hitch Point Offset
+Position of the hitch point in negative x-direction (according to ISO 8855) from the
+vehicle Reference Point.
+@unit 0,1 m
+*/
+HitchPointOffset ::= INTEGER {
+    zeroPointOneMeter   (1),
+    oneMeter            (10),
+    outOfRange          (254),
+    unavailable         (255)
+} (0..255)
+
+/** @brief Front Overhang
+Length of the trailer overhang in the positive x direction (according to ISO 8855) from the
+trailer Reference Point indicated by the refPointID. The value defaults to 0 in case the trailer
+is not overhanging to the front with respect to the trailer reference point.
+@unit 0,1 m
+*/
+FrontOverhang ::= INTEGER {
+    noOverhang          (0),    --< trailer is not overhanging to the front with respect to the
+                                --< trailer reference point
+    zeroPointOneMeter   (1),
+    oneMeter            (10)
+} (0..50)
+
+/** @brief Free Space Confidence
+Confidence indicating that an area is not occupied by a traffic participant or obstacle.
+@unit n/a
+*/
+FreeSpaceConfidence ::= INTEGER {
+    unknown             (0),    --< if the free space confidence is unknown for the described area
+    onePercent          (1),
+    oneHundredPercent   (100),
+    unavailable         (101)   --< if the confidence could not be computed and does not apply.
+} (0..101)
+
+/** @brief Longitudinal Lane Position Value
+Indicates the longitudinal offset of the map-matched position of a particular object along the
+matched lane, beginning from the lane’s starting point as defined in CEN ISO/TS 19091
+@unit 0,1 m
+*/
+LongitudinalLanePositionValue ::= INTEGER {
+    zeroPointOneMeter   (1)
+} (0..32767)
+
+/** @brief Longitudinal Lane Position Confidence
+Absolute accuracy of longitudinal lane position measurement to a confidence level of 95%.
+@unit 0,01 m
+*/
+LongitudinalLanePositionConfidence ::= INTEGER {
+    zeroPointZeroOneMeter   (1),
+    oneMeter                (100),
+    outOfRange              (101),  --< shall be set if the accuracy is out of range
+    unavailable             (102)   --< shall be set if the accuracy data is unavailable
+} (0..102)
+
+/** @brief Object Age
+Age of object in milliseconds, i.e. for how long the object has been observed by the
+disseminating station.
+@unit 1 ms
+*/
+ObjectAge ::= INTEGER {
+    oneMiliSec              (1),
+    moreThan1Point5Second   (1500)  --< indicates that the object has been observed for more than 1.5s.
+} (0..1500)
+
+/** @brief Object Confidence
+A single-value indication about the overall information quality of a perceived object. Its computation
+is based on several scaling factors and moving averages. See Clause 7.6.4 of ETSI TS 103 324 for details
+on the computation.
+@unit n/a
+*/
+ObjectConfidence ::= INTEGER {
+    noConfidence        (0),    --< No confidence in detected object, e.g. for "ghost"-objects or
+                                --< if confidence could not be computed
+    fullConfidence      (15)    --< Full confidence in detected object
+} (0..15)
+
+/** @brief Object Dimension Value
+A dimension for an object.
+@unit 0,1 m
+*/
+ObjectDimensionValue ::= INTEGER {
+    zeroPointOneMeter   (1),
+    oneMeter            (10)
+} (0..1023)
+
+/** @brief Object Dimension Confidence
+Accuracy of provided dimension value with a predefined confidence level (e.g. 95%)
+@unit 0,01 m
+*/
+ObjectDimensionConfidence ::= INTEGER {
+    zeroPointZeroOneMeter   (1),
+    oneMeter                (100),
+    outOfRange              (101),
+    unavailable             (102)
+} (0..102)
+
+/** @brief Object Reference Point
+Reference point of measurement for the object dimensions. All provided state variables of this
+object are given relative to the reference point. The point is included in the plane
+perpendicular to the direction of the @see yawAngleValue.
+*/
+ObjectRefPoint ::= INTEGER {
+    mid             (0),
+    bottomLeft      (1),
+    midLeft         (2),
+    topLeft         (3),
+    bottomMid       (4),
+    topMid          (5),
+    bottomRight     (6),
+    midRight        (7),
+    topRight        (8)
+} (0..8)
+
+/** @brief Radius
+The dimension of a sensor area in the shape of a circle or a rectangle.
+@unit 0,1 m
+*/
+Radius ::= INTEGER {
+    zeroPointOneMeter   (1),
+    oneMeter            (10)
+}  (0..10000)
+
+/** @brief Range
+Range of sensor within the indicated azimuth Angle defined by the start and end opening angle.
+@unit 0,1 m
+*/
+Range ::= INTEGER {
+    zeroPointOneMeter   (1),
+    oneMeter            (10)
+} (0..10000)
+
+/** @brief Rear Overhang
+Length of the trailer overhang in the negative x direction (according to ISO 8855) from the
+trailer Reference Point indicated by the @see refPointID
+@unit 0,1 m
+*/
+RearOverhang ::= INTEGER {
+    zeroPointOneMeter   (1),
+    oneMeter            (10)
+    } (0..150)
+
+/** @brief Reference Point ID
+Reference point counter for a trailer.
+@unit n/a
+*/
+RefPointId ::= INTEGER (0..255)
+
+/** @brief Sensor Height
+ Height of sensor position relative to altitude provided by the reference position.
+@unit 0,01 m
+*/
+SensorHeight ::= INTEGER  {
+    zeroPointZeroOneMeter   (1)
+} (-5000..5000)
+
+/** @brief Vehicle Height
+The height if the vehicle, measured from the ground to the highest point, excluding any antennas.
+In case vehicles are equipped with adjustable ride heights, camper shells, and any other
+equipment which may result in varying height, the largest possible height shall be used.
+@unit 5 cm (DE ranges to 6.35 m)
+*/
+-- VehicleHeight ::= INTEGER (0..127)
+
+/** @brief Shadowing Applies Indication
+Boolean indication if tracing approach shall be used to compute a shadowed area behind an object.
+If set to TRUE, the simple tracing approach shall be applied for each object intersecting or
+located within the area or volume described by the freeSpaceAddendum container. If set to FALSE,
+the simple tracing approach shall not be applied for each object intersecting or located within
+the area or volume described by the freeSpaceAddenum container.
+@unit n/a
+*/
+ShadowingApplies ::= BOOLEAN
+
+/** @brief Identifier
+General identifier data element.
+@unit n/a
+*/
+Identifier ::= INTEGER (0..65535)
+
+/** @brief Number of Perceived Objects
+A data element for representing the total number of detected and shared objects of an ITS-S
+transmitting a CPM.
+@unit n/a
+*/
+NumberOfPerceivedObjects ::= INTEGER (0..255)
+
+/** @brief Sensor Type
+Describes the type of attached sensor
+@unit n/a
+*/
+SensorType ::= INTEGER {
+    undefined       (0),
+    radar           (1),
+    lidar           (2),
+    monovideo       (3),
+    stereovision    (4),
+    nightvision     (5),
+    ultrasonic      (6),
+    pmd             (7),
+    fusion          (8),    --< object information provided from sensor data fusion system
+    inductionloop   (9),
+    sphericalCamera (10),
+    itssaggregation (11)    --< object information gathered from other received ITS messages
+} (0..15)
+
+/** @brief Segment Count
+A data element for representing either the total number of generated segments by the transmitter
+or the identification of the received message segment.
+@unit n/a
+*/
+SegmentCount ::= INTEGER( 1..127)
+
+/** @brief Speed Value Extended
+Value of a speed component.
+@unit 0,01 m/s
+*/
+SpeedValueExtended ::= INTEGER {
+    negativeSpeedMaximum   (-16383), --< shall be set for values equal to or smaller than -163,83 m/s
+    standstill             (0),
+    oneCentimeterPerSec    (1),
+    speedMaximum           (16382), --< shall be set for values equal to or greater than 163,82 m/s
+    unavailable            (16383)  --< shall be set if information is not available
+} (-16383..16383)
+
+/** @brief Acceleration Value
+Value of an acceleration component.
+@unit 0,1 m/s2
+*/
+AccelerationValue ::= INTEGER {
+    pointOneMeterPerSecSquared          (1),
+    minusPointOneMeterPerSecSquared (-1),
+    unavailable                                     (161)  --< shall be set if information is not available
+} (-160 .. 161)
+
+/** @brief Time of Measurement
+Time difference with respect to the @see generationDeltaTime for the provided measurement for the
+object. Negative values indicate that the provided object state refers to a point in time after
+the @see generationDeltaTime has been computed, i.e. after the latest disseminating ITS-S
+position update which is used to calculate the generationDeltaTime.
+@unit 1 ms
+*/
+TimeOfMeasurement ::= INTEGER {
+    oneMilliSecond  (1)
+} (-1500..1500)
+
+/** @brief X Sensor Offset
+Describes the mounting position of a sensor along the negative x-direction from Reference Point
+indicated by the @see refPointID
+@unit 0,01 m
+*/
+XSensorOffset ::= INTEGER {
+    negativeZeroPointZeroOneMeter   (-1),
+    negativeOneMeter                (-100),
+    negativeOutOfRange              (-3094),
+    positiveOneMeter                (100),
+    positiveOutOfRange              (1001)
+} (-3094..1001)
+
+/** @brief Y Sensor Offset
+Described the mounting position of a sensor in y-direction from Reference Point
+indicated by the @see refPointID
+@unit 0,01 m
+*/
+YSensorOffset ::= INTEGER {
+    zeroPointZeroOneMeter   (1),
+    oneMeter                (100)
+} (-1000..1000)
+
+/** @brief Z Sensor Offset
+Described the mounting position of a sensor in y-direction from Reference Point
+indicated by the @see refPointID
+@unit 0,01 m
+*/
+ZSensorOffset ::= INTEGER {
+    zeroPointZeroOneMeter   (1),
+    oneMeter                (100)
+} (0..1000)
+
+
+END

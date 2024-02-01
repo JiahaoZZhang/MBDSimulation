@@ -1,0 +1,10 @@
+<nodes>
+	<!-- <node id="1" x="0.0" y="0.0" type="priority" />
+	<node id="4" x="1000.0" y="0.0" type="priority" />
+	<node id="2" x="1400.0" y="1000.0" type="priority" />
+	<node id="3" x="2200.0" y="0.0" type="priority" /> -->
+	<node id="1" x="0.0" y="0.0" type="priority" />
+	<node id="4" x="300.0" y="0.0" type="priority" />
+	<node id="2" x="300.0" y="300.0" type="priority" />
+	<node id="3" x="600.0" y="0.0" type="priority" />
+</nodes>

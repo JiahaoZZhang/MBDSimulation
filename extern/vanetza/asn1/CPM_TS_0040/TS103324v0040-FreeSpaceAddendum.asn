@@ -1,0 +1,72 @@
+CPM-FreeSpaceAddendum-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) freeSpaceAddendum (6) version1 (1)
+}
+
+DEFINITIONS AUTOMATIC TAGS ::=
+
+BEGIN
+
+IMPORTS
+AreaCircular, AreaEllipse,  AreaPolygon, AreaRectangle, FreeSpaceConfidence, SensorIdList, ShadowingApplies
+FROM CPM-CommonDataTypes-Descriptions {itu-t (0) identified-organization (4) etsi (0) itsDomain (5) wg1 (1) ts (103324) commonDataTypes (2) version1 (1)};
+
+/** Free Space Addendum Container
+A list of provided free space addendums. Each addendum shall be described asa provided by
+@see FreeSpaceAddendum.
+*/
+FreeSpaceAddendumContainer ::= SEQUENCE SIZE(1..128, ...) OF FreeSpaceAddendum
+
+/** Free Space Addendum
+This container shall only be added if the confidence indication needs to be altered with respect
+to the isotropic @see FreeSpaceConfidence confidence level indication provided in the
+@see SensorInformation.
+*/
+FreeSpaceAddendum ::= SEQUENCE {
+    /** @detailsfreeSpaceConfidence
+    Describes an isotropic free space confidence that applies to the entire area as defined in
+    the @see freeSpaceArea of a particular free space addendum container.
+    */
+    freeSpaceConfidence    FreeSpaceConfidence,
+    /** @details freeSpaceArea
+    Describes the free space area for which the free space confidence of this addendum
+    container is valid.
+    */
+    freeSpaceArea          FreeSpaceArea,
+	/** @details sensorIDList
+    Provides a list of pseudonym sensor IDs which performed the measurement to indicate the
+    free space.
+    */
+    sensorIDList           SensorIdList OPTIONAL,
+    /**@details shadowingApplies
+    Indicates if the simple shadowing mechanism  applies within the area described
+    by @see freeSpaceArea.
+    */
+    shadowingApplies       ShadowingApplies DEFAULT TRUE,
+	...
+}
+
+/** Free Space Area
+The described area that is considered as not occupied by any traffic participant or obstacle by
+the disseminating ITS-S.
+*/
+FreeSpaceArea ::= CHOICE {
+    /** @details freeSpacePolygon
+    A sequence of node points from a given offset point to describe an arbitrary area shape.
+    */
+    freeSpacePolygon     AreaPolygon,
+    /**@details freeSpaceCircular
+    A description of a circular area.
+    */
+    freeSpaceCircular    AreaCircular,
+    /** @details freeSpaceEllipse
+    A description of an elliptical area.
+    */
+    freeSpaceEllipse     AreaEllipse,
+    /** @details freeSpaceRectangle
+    A description of a rectangular area.
+    */
+    freeSpaceRectangle   AreaRectangle,
+    ...
+}
+
+END

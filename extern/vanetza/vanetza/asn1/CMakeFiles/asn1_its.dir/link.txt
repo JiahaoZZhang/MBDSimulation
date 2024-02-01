@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../lib/static/libvanetza_asn1_its.a CMakeFiles/asn1_its.dir/asn1_its_no_sources.c.o
+/usr/bin/ranlib ../../lib/static/libvanetza_asn1_its.a

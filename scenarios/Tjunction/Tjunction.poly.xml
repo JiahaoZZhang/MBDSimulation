@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+
+    <!-- <location netOffset="0.00,0.00" convBoundary="0.00,100.00,220.00, 0.00" origBoundary="0.00,100.00,220.00,0.00" projParameter="+proj=tmerc +lat_0=48.78407 +lon_0=11.47258 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"/> -->
+
+    
+    <!-- <poly id="140048143" type="building" color="237,199,199" fill="1" layer="4" shape="0.00,8.00 90.00,8.00 94.00,9.00 96.00,14.00 134.00,110.00 0.00,110.00"/> -->
+    <!-- <poly id="128936182" type="building" color="237,199,199" fill="1" layer="4" shape="1005.00,8.00 1103.00,8.00 1103.00,110.00 1047.00,110.00"/> -->
+    <poly id="128936182" type="building" color="237,199,199" fill="1" layer="4" shape="305.00,8.00 403.00,8.00 403.00,210.00 305.00,210.00"/> 
+
+</additional>

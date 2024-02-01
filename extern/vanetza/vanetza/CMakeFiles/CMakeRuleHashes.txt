@@ -1,0 +1,11 @@
+# Hashes of file build rules.
+1733589d97e0be108f37af44a6f9977a asn1/its
+0e25b31b0f665041854bb0652426aaaf asn1/pki
+d27f61e9549864ced8571e49fba1e08d asn1/security
+87483ced81b991f043f7302d646cddeb asn1/support
+e49c629b03b54af714e1f2ec87dfa895 vanetza/asn1/CMakeFiles/clean_asn1c
+5812b5d63a20d1a1090722149f21fc9e vanetza/asn1/CMakeFiles/generate_asn1c
+976629c230f57a20b9246f42200ff699 vanetza/asn1/asn1c_its_sources.txt
+b3f16cb359471cc3703e324f6eff3653 vanetza/asn1/asn1c_pki_sources.txt
+816045a6ad282648f65a60241a9d0a3d vanetza/asn1/asn1c_security_sources.txt
+2845b61295b6a5d098729fd6094cbd76 vanetza/asn1/asn1c_support_sources.txt
